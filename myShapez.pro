@@ -10,13 +10,13 @@ CONFIG += c++17
 
 SOURCES += \
     main.cpp \
-    mainwindow.cpp
+    widget.cpp
 
 HEADERS += \
-    mainwindow.h
+    widget.h
 
 FORMS += \
-    mainwindow.ui
+    widget.ui
 
 TRANSLATIONS += \
     myShapez_zh_TW.ts
