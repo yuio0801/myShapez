@@ -4,6 +4,7 @@
 #include <QLocale>
 #include <QTranslator>
 
+QWidget*pmain;
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
@@ -17,7 +18,10 @@ int main(int argc, char *argv[])
             break;
         }
     }
+
+    a.setQuitOnLastWindowClosed(true);
     Widget w;
+    pmain=&w;
     w.show();
     return a.exec();
 }
