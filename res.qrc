@@ -1,8 +1,20 @@
 <RCC>
     <qresource prefix="/">
-        <file>res/arrow0_1.png</file>
         <file>res/block.png</file>
         <file>res/facility0_0.png</file>
         <file>res/facility1_0.png</file>
+        <file>res/facility2.png</file>
+        <file>res/facility3_0.png</file>
+        <file>res/facility3_1.png</file>
+        <file>res/facility3_2.png</file>
+        <file>res/facility3_3.png</file>
+        <file>res/facility3_4.png</file>
+        <file>res/facility3_5.png</file>
+        <file>res/facility3_6.png</file>
+        <file>res/facility3_7.png</file>
+        <file>res/facility1_1.png</file>
+        <file>res/facility1_2.png</file>
+        <file>res/facility1_3.png</file>
+        <file>res/mineral0.png</file>
     </qresource>
 </RCC>

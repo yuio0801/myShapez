@@ -3,11 +3,11 @@
 
 #include <QWidget>
 #include <QDebug>
-#include <block.h>
-
-
-
-//int Maxx = 300, Maxy = 300;
+#include "block.h"
+#include "mine.h"
+#include "base.h"
+#include "harvestor.h"
+#include "conveyer.h"
 
 namespace Ui {
 class GameScene;
@@ -22,7 +22,7 @@ public:
     void paintEvent(QPaintEvent *event);
     void closeEvent(QCloseEvent *event);
     void keyPressEvent(QKeyEvent *event);
-
+    void move_all_mineral();
     ~GameScene();
 
 private:
@@ -30,9 +30,10 @@ private:
     int GameTime;
     QTimer *timer0 = nullptr; //计时
     QTimer *timer1 = nullptr; //刷新屏幕
-    Block *block[20][20];
+    QTimer *timer2 = nullptr;
+    Block *block[20][30];
     void draw_block(QPainter &painter, Block *bl);
-
+    bool Mineral_out(Block *bl = NULL, Facility *fac = NULL, Mineral *tmp = NULL);
 };
 
 #endif // GAMESCENE_H

@@ -1,37 +1,57 @@
 #include "block.h"
-#include <QDebug>
 
-#define SIZE 30
+using namespace std;
 
 extern int Maxx,Maxy;
 extern QString Facility_name[10];
+extern const int SIZE;
 
-Block::Block(QObject *parent, int id_x, int id_y)
+extern unordered_map<Mine *, Block *> mine_all;
+extern unordered_map<Harvestor *, Block *> harvestor_all;
+extern unordered_map<Base *, Block *> base_all;
+extern unordered_map<Conveyer *, Block *> conveyer_all;
+
+extern map<int, Mineral *> mineral_all;
+extern int mineral_cnt;
+
+extern int money;
+extern int mineral_num[4];
+extern int mineral_value[4];
+
+Block::Block(QObject *parent, int init_id_x, int init_id_y)
     : QObject{parent}
 {
     icon.load(":/res/block.png");
     if(icon.isNull())
         qDebug()<<"open block icon"<<"[" + QString::number(id_x) + "]" + "[" + QString::number(id_y) + "]" + "fails";
-    x = id_x, y = id_y;
+    id_x = init_id_x, id_y = init_id_y;
     size = SIZE;
-    pos_x = x * size;
-    pos_y = y * size;
+    p.pos_x = id_x * size;
+    p.pos_y = id_y * size;
+    middle.pos_x = p.pos_x + SIZE / 2;
+    middle.pos_y = p.pos_y + SIZE / 2;
     facility = NULL;
-    qDebug()<<"create block:"<<x<<" "<<y;
+    mine  = NULL;
+
+
+    qDebug()<<"create block:"<<id_x<<" "<<id_y;
 
 }
 
 Block::~Block()
 {
-    qDebug()<<"delete block:"<<x<<" "<<y;
+    qDebug()<<"delete block:"<<id_x<<" "<<id_y;
     if(facility)
     {
         delete facility;
     }
-
+    if(mine)
+    {
+        delete mine;
+    }
 }
 
-Facility::Facility(QObject *parent, Block *init_bl, int init_type, bool init_rotatable)
+Facility::Facility(QObject *parent, Block *init_bl, int init_type, int init_dir, bool init_rotatable)
     : QObject{parent}
 {
     size = SIZE;
@@ -41,15 +61,34 @@ Facility::Facility(QObject *parent, Block *init_bl, int init_type, bool init_rot
         qDebug()<<"bl error in creat facility";
         return ;
     }
-    middle_x = bl->pos_x + size / 2;
-    middle_y = bl->pos_y + size / 2;
+    middle.pos_x = bl->middle.pos_x;
+    middle.pos_y = bl->middle.pos_y;
+    dir = init_dir;
+    if(1/*TODO*/)
+    {
+        in_dir = dir;
+        out_dir = dir;
+    }
+
     rotatable = init_rotatable;
     type = init_type;
 }
 
 Facility::~Facility()
 {
-    qDebug()<<"delete "+ Facility_name[type];
+    //qDebug()<<"delete "+ Facility_name[type];
+
+}
+
+bool Facility::settle_available()
+{
+    if(!bl)
+    {
+        qDebug()<<Facility_name[type] +" bl error";
+        return false;
+    }
+    if(bl->facility == NULL && bl->mine == NULL) return true; // not base
+    else return false;
 }
 
 void Facility::settle()
@@ -60,52 +99,67 @@ void Facility::settle()
         return ;
     }
     //if(settle_available())
+
+    if(bl->facility)
+    {
+        switch(bl->facility->type)
+        {
+        case 2:base_all.erase((Base*)bl->facility);
+        case 3:conveyer_all.erase((Conveyer*)bl->facility);
+        }
+
+        delete bl->facility;
+    }
     bl->facility = this;
-
-}
-
-Mine::Mine(QObject *parent, Block *init_bl, int init_id_mineral)
-    :Facility(parent, init_bl, 0, false)
-{
-    qDebug()<<"create mine";
-
-    id_mineral = init_id_mineral;
-    harvestor = NULL;
-
-    icon.load(":/res/facility0_" + QString::number(id_mineral));
-    if(icon.isNull())
-        qDebug()<<"open mine icon fail";
-
-}
-
-Mine::~Mine()
-{
-    /*TODO*/
-    ;
-}
-
-Harvestor::Harvestor(QObject *parent, Block *init_bl, int init_dir)
-    :Facility(parent, init_bl, 1, true)
-{
-    qDebug()<<"create harvestor";
-
-    dir = init_dir;
-
-    icon.load(":/res/facility1_" + QString::number(dir));
-    if(icon.isNull())
-        qDebug()<<"open harvestor icon fail";
-
-
-    //qDebug()<<this->rotatable;
+    switch(bl->facility->type)
+    {
+    case 1:harvestor_all.insert(make_pair((Harvestor*)bl->facility, bl));
+    case 2:base_all.insert(make_pair((Base*)bl->facility, bl));
+    case 3:conveyer_all.insert(make_pair((Conveyer*)bl->facility,bl));
+    }
 }
 
 
-Mineral::Mineral(QObject *parent, int init_pos_x, int init_pos_y)
+Mineral::Mineral(QObject *parent, Block *init_bl, int init_pos_x , int init_pos_y, int init_type)
     : QObject{parent}
 {
-    pos_x = init_pos_x, pos_y = init_pos_y;
     size = SIZE;
-    middle_x = pos_x + size / 2;
-    middle_y = pos_y + size / 2;
+    bl = init_bl;
+    p.pos_x = init_pos_x;
+    p.pos_y = init_pos_y;
+    type = init_type;
+    icon.load(":/res/mineral" + QString::number(type));
+    if(icon.isNull())
+        qDebug()<<"open mineral icon fail";
+}
 
+Mineral::~Mineral()
+{
+    //qDebug()<<"delete Mineral";
+}
+
+
+bool Mineral::moveable(int x, int y, int dir)
+{
+    int dx[4] = {0, 1, 0, -1};
+    int dy[4] = {-1, 0, 1, 0};
+    int nxt_x, nxt_y;
+    switch(dir)
+    {
+    case 0:nxt_x = x; nxt_y = y - SIZE / 2 + dy[dir];break;
+    case 1:nxt_x = x + SIZE / 2 + dx[dir]; nxt_y = y;break;
+    case 2:nxt_x = x; nxt_y = y + SIZE / 2 + dy[dir];break;
+    case 3:nxt_x = x - SIZE / 2 + dx[dir]; nxt_y = y;break;
+    }
+    for(auto pia: mineral_all)
+    {
+        Mineral *tmp = pia.second;
+        if(tmp == this) continue;
+        if(tmp->p.pos_x - SIZE / 2 <= nxt_x && nxt_x < tmp->p.pos_x + SIZE / 2 &&
+            tmp->p.pos_y - SIZE / 2 <= nxt_y && nxt_y < tmp->p.pos_y + SIZE / 2)
+        {
+            return false;
+        }
+    }
+    return true;
 }
