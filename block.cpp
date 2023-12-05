@@ -17,7 +17,7 @@ extern int mineral_cnt;
 extern int money;
 extern int mineral_num[4];
 extern int mineral_value[4];
-
+extern Block* block[30][20];
 Block::Block(QObject *parent, int init_id_x, int init_id_y)
     : QObject{parent}
 {
@@ -69,7 +69,7 @@ Facility::Facility(QObject *parent, Block *init_bl, int init_type, int init_dir,
         in_dir = dir;
         out_dir = dir;
     }
-
+    mineral_inque = mineral_outque = NULL;
     rotatable = init_rotatable;
     type = init_type;
 }
@@ -87,8 +87,13 @@ bool Facility::settle_available()
         qDebug()<<Facility_name[type] +" bl error";
         return false;
     }
-    if(bl->facility == NULL && bl->mine == NULL) return true; // not base
-    else return false;
+    if(bl->mine) return false;
+    if(bl->facility)
+    {
+        if(bl->facility->type == 1 || bl->facility->type == 2) return false;
+        else return true;
+    }
+    return true;
 }
 
 void Facility::settle()
@@ -98,10 +103,41 @@ void Facility::settle()
         qDebug()<<Facility_name[type] +" bl error";
         return ;
     }
-    //if(settle_available())
+    assert(settle_available());
 
     if(bl->facility)
     {
+        if(bl->facility->mineral_outque)
+        {
+            Mineral *tmp = bl->facility->mineral_outque;
+            int idx = 0;
+            for(auto pai:mineral_all)
+            {
+                if(pai.second == tmp)
+                {
+                    idx = pai.first;
+                    break;
+                }
+            }
+            mineral_all.erase(idx);
+            delete tmp;
+
+        }
+        if(bl->facility->mineral_inque)
+        {
+            Mineral *tmp = bl->facility->mineral_inque;
+            int idx = 0;
+            for(auto pai:mineral_all)
+            {
+                if(pai.second == tmp)
+                {
+                    idx = pai.first;
+                    break;
+                }
+            }
+            mineral_all.erase(idx);
+            delete tmp;
+        }
         switch(bl->facility->type)
         {
         case 2:base_all.erase((Base*)bl->facility);
@@ -118,7 +154,87 @@ void Facility::settle()
     case 3:conveyer_all.insert(make_pair((Conveyer*)bl->facility,bl));
     }
 }
-
+void Facility::resetdir()
+{
+    return ;
+}
+bool Facility::Mineral_out(Mineral *tmp)
+{
+    int dir = out_dir;
+    if(tmp->p.pos_x == 0 || tmp->p.pos_x == Maxx * SIZE || tmp->p.pos_y == 0 || tmp->p.pos_y == Maxy * SIZE)
+    {
+        return 0;
+    }
+    Block* nxt;Facility *nfac; bool flag = false;
+    if(dir == 0 && tmp->p.pos_x == bl->middle.pos_x && tmp->p.pos_y == bl->middle.pos_y - SIZE / 2)
+    {
+        nxt = block[bl->id_x][bl->id_y - 1];
+        if(!nxt->facility)
+        {
+            flag = false;
+        }
+        else
+        {
+            nfac = nxt->facility;
+            if(nfac->in_dir == -1 || nfac->in_dir == 0)
+            {
+                flag = true;
+            }
+        }
+        //if(/*TODO:CUTTER*/)
+        }
+    else if(dir == 1 && tmp->p.pos_x == bl->middle.pos_x + SIZE / 2 && tmp->p.pos_y == bl->middle.pos_y)
+    {
+        nxt = block[bl->id_x + 1][bl->id_y];
+        if(!nxt->facility)
+        {
+            flag = false;
+        }
+        else
+        {
+            nfac = nxt->facility;
+            if(nfac->in_dir == -1 || nfac->in_dir == 1)
+            {
+                flag = true;
+            }
+        }
+    }
+    else if(dir == 2 && tmp->p.pos_x == bl->middle.pos_x && tmp->p.pos_y == bl->middle.pos_y + SIZE / 2)
+    {
+        nxt = block[bl->id_x][bl->id_y + 1];
+        if(!nxt->facility)
+        {
+            flag = false;
+        }
+        else
+        {
+            nfac = nxt->facility;
+            if(nfac->in_dir == -1 || nfac->in_dir == 2)
+            {
+                flag = true;
+            }
+        }
+    }
+    else if(dir == 3 && tmp->p.pos_x == bl->middle.pos_x - SIZE / 2 && tmp->p.pos_y == bl->middle.pos_y)
+    {
+        nxt = block[bl->id_x - 1][bl->id_y];
+        if(!nxt->facility)
+        {
+            flag = false;
+        }
+        else
+        {
+            nfac = nxt->facility;
+            if(nfac->in_dir == -1 || nfac->in_dir == 3)
+            {
+                flag = true;
+            }
+        }
+    }
+    assert(tmp->p.pos_x % 25 == 0 && tmp->p.pos_y % 25 == 0);
+    //qDebug()<<"out of situation error";
+    return flag;
+}
 
 Mineral::Mineral(QObject *parent, Block *init_bl, int init_pos_x , int init_pos_y, int init_type)
     : QObject{parent}
@@ -143,20 +259,31 @@ bool Mineral::moveable(int x, int y, int dir)
 {
     int dx[4] = {0, 1, 0, -1};
     int dy[4] = {-1, 0, 1, 0};
-    int nxt_x, nxt_y;
+    int nxt_x = x, nxt_y = y;
+    for(auto pia: mineral_all)
+    {
+        Mineral *tmp = pia.second;
+        if(tmp == this) continue;
+        if(tmp->p.pos_x - SIZE / 2 <= nxt_x && nxt_x <= tmp->p.pos_x + SIZE / 2 &&
+            tmp->p.pos_y - SIZE / 2 <= nxt_y && nxt_y <= tmp->p.pos_y + SIZE / 2)
+        {
+            return false;
+        }
+    }
     switch(dir)
     {
     case 0:nxt_x = x; nxt_y = y - SIZE / 2 + dy[dir];break;
     case 1:nxt_x = x + SIZE / 2 + dx[dir]; nxt_y = y;break;
     case 2:nxt_x = x; nxt_y = y + SIZE / 2 + dy[dir];break;
     case 3:nxt_x = x - SIZE / 2 + dx[dir]; nxt_y = y;break;
+    default:assert(0);
     }
     for(auto pia: mineral_all)
     {
         Mineral *tmp = pia.second;
         if(tmp == this) continue;
-        if(tmp->p.pos_x - SIZE / 2 <= nxt_x && nxt_x < tmp->p.pos_x + SIZE / 2 &&
-            tmp->p.pos_y - SIZE / 2 <= nxt_y && nxt_y < tmp->p.pos_y + SIZE / 2)
+        if(tmp->p.pos_x - SIZE / 2 <= nxt_x && nxt_x <= tmp->p.pos_x + SIZE / 2 &&
+            tmp->p.pos_y - SIZE / 2 <= nxt_y && nxt_y <= tmp->p.pos_y + SIZE / 2)
         {
             return false;
         }

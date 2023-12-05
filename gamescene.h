@@ -22,18 +22,23 @@ public:
     void paintEvent(QPaintEvent *event);
     void closeEvent(QCloseEvent *event);
     void keyPressEvent(QKeyEvent *event);
-    void move_all_mineral();
+
+
     ~GameScene();
 
 private:
     Ui::GameScene *ui;
     int GameTime;
     QTimer *timer0 = nullptr; //计时
-    QTimer *timer1 = nullptr; //刷新屏幕
-    QTimer *timer2 = nullptr;
-    Block *block[20][30];
+    QTimer *timer1 = nullptr; //Mine
+    QTimer *timer2 = nullptr; //Conveyer
+    QTimer *timer3 = nullptr; //Base
+    QTimer *timer4 = nullptr; //刷新
     void draw_block(QPainter &painter, Block *bl);
-    bool Mineral_out(Block *bl = NULL, Facility *fac = NULL, Mineral *tmp = NULL);
+    void create_mineral();
+    void move_mineral();
+    void settle_mode();
+    void Load();
 };
 
 #endif // GAMESCENE_H

@@ -13,8 +13,10 @@ public:
     ~Harvestor();
     virtual bool settle_available();
     virtual void settle();
-    static int speed;
-    bool Mineral_tackle();
+    //static int speed;
+    void Mineral_in(Mineral *tmp);
+    bool Mineral_tackle(Mineral *tmp);
+    bool Mineral_out(Mineral *tmp);
 };
 
 

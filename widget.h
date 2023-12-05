@@ -16,7 +16,7 @@ class Widget : public QWidget
     Q_OBJECT
     Store* mystore;
     GameScene* scene;
-    QString filePath;
+
     std::ifstream savedata;
 
 public:

@@ -54,6 +54,23 @@
      <string>Money</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="Consettletn">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>200</y>
+      <width>50</width>
+      <height>50</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset resource="res.qrc">
+      <normaloff>:/res/facility3_0.png</normaloff>:/res/facility3_0.png</iconset>
+    </property>
+   </widget>
   </widget>
   <widget class="QWidget" name="WorkPlace" native="true">
    <property name="geometry">
@@ -66,6 +83,8 @@
    </property>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="res.qrc"/>
+ </resources>
  <connections/>
 </ui>

@@ -7,6 +7,7 @@
 bool ifload = 0;
 
 using namespace std;
+QString filePath;
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Widget)

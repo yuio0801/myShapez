@@ -4,8 +4,6 @@
         <file>res/facility0_0.png</file>
         <file>res/facility1_0.png</file>
         <file>res/facility2.png</file>
-        <file>res/facility3_0.png</file>
-        <file>res/facility3_1.png</file>
         <file>res/facility3_2.png</file>
         <file>res/facility3_3.png</file>
         <file>res/facility3_4.png</file>
@@ -16,5 +14,14 @@
         <file>res/facility1_2.png</file>
         <file>res/facility1_3.png</file>
         <file>res/mineral0.png</file>
+        <file>res/facility3_0.png</file>
+        <file>res/facility3_1.png</file>
+        <file>res/facility3_8.png</file>
+        <file>res/facility3_9.png</file>
+        <file>res/facility3_10.png</file>
+        <file>res/facility3_11.png</file>
+        <file>res/mineral1.png</file>
+        <file>res/arrow0.png</file>
+        <file>res/arrow1.png</file>
     </qresource>
 </RCC>

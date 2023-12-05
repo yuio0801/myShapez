@@ -58,12 +58,13 @@ public:
     Mineral *mineral_inque;
     Mineral *mineral_outque;
     Block *bl = NULL;
-    //Mineral * Mineral_in(int pos_x, int pos_y, int type);
-    virtual bool Mineral_tackle() = 0;
-
+    virtual void Mineral_in(Mineral *tmp) = 0;
+    virtual bool Mineral_tackle(Mineral *tmp) = 0;
+    virtual bool Mineral_out(Mineral *tmp);
+    virtual void resetdir();
 
 signals:
-
+    void Mineral_trigger(Mineral *tmp);
 };
 
 
