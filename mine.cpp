@@ -31,6 +31,7 @@ Mine::Mine(QObject *parent, Block *init_bl, int init_id_mineral)
 Mine::~Mine()
 {
     /*TODO*/
+    qDebug()<<"delete miner";
     ;
 }
 

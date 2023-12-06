@@ -5,6 +5,7 @@
 #include <qpixmap.h>
 #include <map>
 #include <QDebug>
+
 //#include "mine.h"
 
 
@@ -12,12 +13,14 @@ using namespace std;
 
 extern const int SIZE;
 
+class Cutter;
+class Dustbin;
 class Mineral;
 class Base;         //2
 class Harvestor;    //1
 class Mine;
 class Facility;
-class Conveyer;
+class Conveyer;     //3
 
 struct Pos{
     int pos_x, pos_y;

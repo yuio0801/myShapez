@@ -12,9 +12,12 @@ public:
     explicit Base(QObject *parent = nullptr, Block *init_bl = NULL);
     ~Base();
     //static int speed;
-    void Mineral_in(Mineral *tmp);
-    bool Mineral_tackle(Mineral *tmp);
-    bool Mineral_out(Mineral *tmp);
+    virtual void Mineral_in(Mineral *tmp);
+    virtual bool Mineral_tackle(Mineral *tmp);
+    virtual bool Mineral_out(Mineral *tmp);\
+
+        signals:
+    void Mineral_trigger(Mineral *tmp);
 };
 
 #endif // BASE_H

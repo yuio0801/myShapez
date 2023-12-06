@@ -8,6 +8,8 @@
 #include "base.h"
 #include "harvestor.h"
 #include "conveyer.h"
+#include "dustbin.h"
+#include "cutter.h"
 
 namespace Ui {
 class GameScene;
@@ -38,7 +40,8 @@ private:
     void create_mineral();
     void move_mineral();
     void settle_mode();
-    void Load();
+    bool Load();
+    void Init();
 };
 
 #endif // GAMESCENE_H

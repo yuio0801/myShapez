@@ -1,5 +1,5 @@
 #include "block.h"
-
+#include "cutter.h"
 using namespace std;
 
 extern int Maxx,Maxy;
@@ -10,7 +10,8 @@ extern unordered_map<Mine *, Block *> mine_all;
 extern unordered_map<Harvestor *, Block *> harvestor_all;
 extern unordered_map<Base *, Block *> base_all;
 extern unordered_map<Conveyer *, Block *> conveyer_all;
-
+extern unordered_map<Cutter *,Block *>cutter_all;
+extern unordered_map<Dustbin *, Block *> dustbin_all;
 extern map<int, Mineral *> mineral_all;
 extern int mineral_cnt;
 
@@ -49,6 +50,7 @@ Block::~Block()
     {
         delete mine;
     }
+
 }
 
 Facility::Facility(QObject *parent, Block *init_bl, int init_type, int init_dir, bool init_rotatable)
@@ -138,20 +140,44 @@ void Facility::settle()
             mineral_all.erase(idx);
             delete tmp;
         }
-        switch(bl->facility->type)
+        if(bl->facility->type == 4)
         {
-        case 2:base_all.erase((Base*)bl->facility);
-        case 3:conveyer_all.erase((Conveyer*)bl->facility);
+            Cutter *cutter = (Cutter*)bl->facility;
+            if(cutter->part == 1)
+            {
+                cutter = cutter->another;
+            }
+            cutter_all.erase(cutter);
+            delete cutter->another;
+            delete cutter;
         }
+        else
+        {
+            switch(bl->facility->type)
+            {
+            case 1:harvestor_all.erase(((Harvestor*)bl->facility));break;
+            case 2:base_all.erase((Base*)bl->facility);break;
+            case 3:conveyer_all.erase((Conveyer*)bl->facility);break;
+            case 5:dustbin_all.erase((Dustbin*)bl->facility);break;
+            }
 
-        delete bl->facility;
+            delete bl->facility;
+        }
     }
     bl->facility = this;
+    if(bl->facility->type == 4)
+    {
+        Cutter *cutter = (Cutter*)bl->facility;
+        if(cutter->part == 0)
+        cutter_all.insert(make_pair((Cutter*)bl->facility, bl));
+    }
+    else
     switch(bl->facility->type)
     {
     case 1:harvestor_all.insert(make_pair((Harvestor*)bl->facility, bl));
     case 2:base_all.insert(make_pair((Base*)bl->facility, bl));
     case 3:conveyer_all.insert(make_pair((Conveyer*)bl->facility,bl));
+    case 5:dustbin_all.insert(make_pair((Dustbin*)bl->facility, bl));
     }
 }
 void Facility::resetdir()
@@ -160,6 +186,7 @@ void Facility::resetdir()
 }
 bool Facility::Mineral_out(Mineral *tmp)
 {
+    assert(tmp!=NULL);
     int dir = out_dir;
     if(tmp->p.pos_x == 0 || tmp->p.pos_x == Maxx * SIZE || tmp->p.pos_y == 0 || tmp->p.pos_y == Maxy * SIZE)
     {
@@ -176,13 +203,25 @@ bool Facility::Mineral_out(Mineral *tmp)
         else
         {
             nfac = nxt->facility;
-            if(nfac->in_dir == -1 || nfac->in_dir == 0)
+            if(nfac->type == 4)
+            {
+                Cutter * cutter = (Cutter*)nfac;
+                if(tmp->type != 0 || cutter->part != 0 || cutter->in_dir != 0 || !cutter->empty || !cutter->Cutter_out())
+                {
+                    flag = false;
+                }
+                else
+                {
+                    flag = true;
+                }
+            }
+            else if(nfac->in_dir == -1 || nfac->in_dir == 0)
             {
                 flag = true;
             }
         }
-        //if(/*TODO:CUTTER*/)
-        }
+
+    }
     else if(dir == 1 && tmp->p.pos_x == bl->middle.pos_x + SIZE / 2 && tmp->p.pos_y == bl->middle.pos_y)
     {
         nxt = block[bl->id_x + 1][bl->id_y];
@@ -193,7 +232,19 @@ bool Facility::Mineral_out(Mineral *tmp)
         else
         {
             nfac = nxt->facility;
-            if(nfac->in_dir == -1 || nfac->in_dir == 1)
+            if(nfac->type == 4)
+            {
+                Cutter * cutter = (Cutter*)nfac;
+                if(tmp->type != 0 || cutter->part != 0 || cutter->in_dir != 1 || !cutter->empty || !cutter->Cutter_out())
+                {
+                    flag = false;
+                }
+                else
+                {
+                    flag = true;
+                }
+            }
+            else if(nfac->in_dir == -1 || nfac->in_dir == 1)
             {
                 flag = true;
             }
@@ -209,7 +260,19 @@ bool Facility::Mineral_out(Mineral *tmp)
         else
         {
             nfac = nxt->facility;
-            if(nfac->in_dir == -1 || nfac->in_dir == 2)
+            if(nfac->type == 4)
+            {
+                Cutter * cutter = (Cutter*)nfac;
+                if(tmp->type != 0 || cutter->part != 0 || cutter->in_dir != 2 || !cutter->empty || !cutter->Cutter_out())
+                {
+                    flag = false;
+                }
+                else
+                {
+                    flag = true;
+                }
+            }
+            else if(nfac->in_dir == -1 || nfac->in_dir == 2)
             {
                 flag = true;
             }
@@ -225,7 +288,19 @@ bool Facility::Mineral_out(Mineral *tmp)
         else
         {
             nfac = nxt->facility;
-            if(nfac->in_dir == -1 || nfac->in_dir == 3)
+            if(nfac->type == 4)
+            {
+                Cutter * cutter = (Cutter*)nfac;
+                if(tmp->type != 0 || cutter->part != 0 || cutter->in_dir != 3 || !cutter->empty || !cutter->Cutter_out())
+                {
+                    flag = false;
+                }
+                else
+                {
+                    flag = true;
+                }
+            }
+            else if(nfac->in_dir == -1 || nfac->in_dir == 3)
             {
                 flag = true;
             }

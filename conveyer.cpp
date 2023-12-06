@@ -8,7 +8,7 @@ extern unordered_map<Mine *, Block *> mine_all;
 extern unordered_map<Harvestor *, Block *> harvestor_all;
 extern unordered_map<Base *, Block *> base_all;
 extern unordered_map<Conveyer *, Block *> conveyer_all;
-
+extern unordered_map<Cutter *,Block *>cutter_all;
 extern map<int, Mineral *> mineral_all;
 extern int mineral_cnt;
 
@@ -129,6 +129,7 @@ void Conveyer::Mineral_move()
                 assert(nfac != NULL);
                 nfac->Mineral_in(tmp);
                 mineral_outque = NULL;
+                return ;
             }
             else
             {

@@ -8,28 +8,37 @@
 
 const int SIZE = 50;
 
-int Task = 1;
+int init_harvestor_speed = 15;
+int init_base_speed = 10;
+int init_conveyer_speed = 20;
+int init_cutter_speed = 1000;
+int init_Task = 1;
+int money = 0;
 Block *block[30][20];
+
 //当前地图最大长宽
 int Maxx = 10, Maxy = 10;
-QString Facility_name[10]={"error", "harvestor", "base", "conveyer",};
+QString Facility_name[10]={"error", "harvestor", "base", "conveyer","cutter","dustbin",};
 extern QString filePath;
-int mineral_value[4]={20, 10, };
+int mineral_value[4]={20, 10, 50, 30};
 //此时Pos中储存id_x, id_y
 unordered_map<Mine *, Block *> mine_all;
 unordered_map<Harvestor *, Block *> harvestor_all;
 unordered_map<Base *, Block *> base_all;
 unordered_map<Conveyer *, Block *> conveyer_all;
+unordered_map<Cutter *,Block *>cutter_all;
+unordered_map<Dustbin *, Block *> dustbin_all;
 
 map<int, Mineral *> mineral_all;
 int mineral_cnt = 0;
 
-int money;
+
 int mineral_num[4];
 
 int harvestor_speed = 15;
 int base_speed = 10;
 int conveyer_speed = 20;
+int cutter_speed = 5000;
 
 //int Harvestor::speed = harvestor_speed;
 //int Base::speed = 0xffff;
@@ -37,6 +46,10 @@ int conveyer_speed = 20;
 
 int settletype = -1;
 Conveyer *Contobesettle = NULL;
+Harvestor *Hartobesettle = NULL;
+Dustbin *Dustobesettle = NULL;
+Cutter *Cuttobesettle = NULL;
+
 bool settleable = false;
 int curdir = 0;
 
@@ -48,10 +61,18 @@ GameScene::GameScene(QWidget *parent) :
 
     //初始化
     setFixedSize(1700,1000);
-    setWindowTitle("Task "+QString::number(Task));
+    setWindowTitle("myShapez");
+
     if(!filePath.isNull())
     {
-        Load();
+        if(!Load())
+        {
+            Init();
+        }
+    }
+    else
+    {
+        Init();
     }
     GameTime = 0;
     ui->TimeLabel->setText("GameTime:0s");
@@ -91,41 +112,50 @@ GameScene::GameScene(QWidget *parent) :
 
     //放置
     connect(ui->Consettletn, &QPushButton::clicked, this, [&, this]{settletype = 3; this->settle_mode();});
-
+    connect(ui->Havsettletn, &QPushButton::clicked, this, [&, this]{settletype = 1; this->settle_mode();});
+    connect(ui->Dustsettletn, &QPushButton::clicked, this, [&, this]{settletype = 5; this->settle_mode();});
+    connect(ui->Cutsettletn, &QPushButton::clicked, this, [&, this]{settletype = 4; this->settle_mode();});
 
     Mine *tmp = new Mine(parent, block[0][0], 0);
     tmp->settle();
+    tmp = new Mine(parent, block[0][1], 0);
+    tmp->settle();
+
     Harvestor *hav = new Harvestor(parent, block[0][0], 1);
     if(hav->settle_available())
     {
         hav->settle();
     }
-    Base *base = new Base(parent, block[2][5]);
+    hav = new Harvestor(parent, block[0][1], 1);
+    if(hav->settle_available())
+    {
+        hav->settle();
+    }
+    Base *base = new Dustbin(parent, block[2][0]);
     if(base->settle_available())
     {
         base->settle();
     }
-    Conveyer *conv = new Conveyer(parent, block[1][0], 1);
+    base = new Base(parent, block[2][2]);
+    if(base->settle_available())
+    {
+        base->settle();
+    }
+    Cutter *cut = new Cutter(parent, block[2][1], 0, 2);
+    if(cut->settle_available())
+    {
+        cut->Cutter_settle();
+    }
+
+
+
+    Conveyer *conv;
+    conv = new Conveyer(parent, block[1][0], 1);
     if(conv->settle_available())
     {
         conv->settle();
     }
-    conv = new Conveyer(parent, block[2][0], 6);
-    if(conv->settle_available())
-    {
-        conv->settle();
-    }
-    conv = new Conveyer(parent, block[2][1], 2);
-    if(conv->settle_available())
-    {
-        conv->settle();
-    }
-    conv = new Conveyer(parent, block[2][2], 2);
-    if(conv->settle_available())
-    {
-        conv->settle();
-    }
-    conv = new Conveyer(parent, block[2][3], 2);
+    conv = new Conveyer(parent, block[2][0], 7);
     if(conv->settle_available())
     {
         conv->settle();
@@ -139,6 +169,17 @@ GameScene::GameScene(QWidget *parent) :
     {
         conv->settle();
     }
+    conv = new Conveyer(parent, block[1][2], 2);
+    if(conv->settle_available())
+    {
+        conv->settle();
+    }
+    base = new Base(parent, block[1][5]);
+    if(base->settle_available())
+    {
+        base->settle();
+    }
+
     //delete block[0][0];
     //block[0][0]=NULL;
     //qDebug()<<"delete asda";
@@ -148,9 +189,17 @@ GameScene::~GameScene()
 {
     delete ui;
 }
-void GameScene::Load()
+bool GameScene::Load()
 {
-    return ;
+    return 0;
+}
+void GameScene::Init()
+{
+    mine_all.clear();
+    harvestor_all.clear();
+    base_all.clear();
+    conveyer_all.clear();
+
 }
 void GameScene::create_mineral()
 {
@@ -197,7 +246,6 @@ void GameScene::create_mineral()
             assert(nfac->type == 3);
             mineral_cnt++;
             mineral_all.insert(make_pair(mineral_cnt, tmp));
-            qDebug()<<QString::number(mineral_cnt);
             assert(nfac->mineral_inque == NULL);
             nfac->Mineral_in(tmp);
         }
@@ -231,7 +279,22 @@ void GameScene::settle_mode()
     if(settletype == 3)
     {
         Contobesettle = new Conveyer(NULL, block[0][0], 0);
-
+        settleable = Contobesettle->settle_available();
+    }
+    if(settletype == 1)
+    {
+        Hartobesettle = new Harvestor(NULL, block[0][0], 0);
+        settleable = Hartobesettle->settle_available();
+    }
+    if(settletype == 5)
+    {
+        Dustobesettle = new Dustbin(NULL, block[0][0]);
+        settleable = Dustobesettle->settle_available();
+    }
+    if(settletype == 4)
+    {
+        Cuttobesettle = new Cutter(NULL, block[0][0], 0, 0, NULL);
+        settleable = Cuttobesettle->settle_available();
     }
 }
 void GameScene::paintEvent(QPaintEvent* event)
@@ -266,8 +329,28 @@ void GameScene::paintEvent(QPaintEvent* event)
         {
             pos = Contobesettle->bl;
             painter.drawPixmap(pos->p.pos_x, pos->p.pos_y, icon);
-            if(Contobesettle)
             painter.drawPixmap(1650, 950, Contobesettle->icon);
+        }
+        if(settletype == 1)
+        {
+            pos = Hartobesettle->bl;
+            painter.drawPixmap(pos->p.pos_x, pos->p.pos_y, icon);
+            painter.drawPixmap(1650, 950, Hartobesettle->icon);
+        }
+        if(settletype == 5)
+        {
+            pos = Dustobesettle->bl;
+            painter.drawPixmap(pos->p.pos_x, pos->p.pos_y, icon);
+            painter.drawPixmap(1650, 950, Dustobesettle->icon);
+        }
+        if(settletype == 4)
+        {
+            pos = Cuttobesettle->bl;
+            painter.drawPixmap(pos->p.pos_x, pos->p.pos_y, icon);
+            painter.drawPixmap(1650, 950, Cuttobesettle->icon);
+            pos = Cuttobesettle->another->bl;
+            painter.drawPixmap(pos->p.pos_x, pos->p.pos_y, icon);
+            painter.drawPixmap(1650, 950, Cuttobesettle->another->icon);
         }
     }
 
@@ -384,27 +467,4 @@ void GameScene::draw_block(QPainter &painter, Block *bl)
             }
         }
     }
-//    for(int i=0;i<Monster_Num;i++)
-//    {
-
-//        if(pmonster[i].cur_HP>0)
-//        {
-
-//            painter.drawPixmap(pmonster[i].pos_x,pmonster[i].pos_y,*(pmonster[i].picon));
-//            //血条
-//            QBrush trans_brush( QColor(0,0,0,20) );//把刷子设置为透明
-//            painter.setBrush(trans_brush);//应用刷子
-
-
-//            painter.drawRect(pmonster[i].pos_x,pmonster[i].pos_y,pmonster[i].icon2.width(),pmonster[i].icon2.height()*0.12);//绘制矩形
-//            float rate=1.0*pmonster[i].cur_HP/pmonster[i].HP;//计算比例
-//            QBrush red_brush( QColor("#F20900") );//把刷子设置为红色
-//            painter.setBrush(red_brush);//应用刷子
-//            painter.drawRect(pmonster[i].pos_x,pmonster[i].pos_y,rate*pmonster[i].icon2.width(),pmonster[i].icon2.height()*0.12);//绘制矩形
-//        }
-//        else if(pmonster[i].ExpFlag)
-//        {
-//            painter.drawPixmap(pmonster[i].pos_x,pmonster[i].pos_y,pmonster[i].exp_icon);
-//        }
-//    }
 }

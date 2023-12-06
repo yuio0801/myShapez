@@ -11,6 +11,8 @@ SOURCES += \
     base.cpp \
     block.cpp \
     conveyer.cpp \
+    cutter.cpp \
+    dustbin.cpp \
     gamescene.cpp \
     harvestor.cpp \
     main.cpp \
@@ -22,6 +24,8 @@ HEADERS += \
     base.h \
     block.h \
     conveyer.h \
+    cutter.h \
+    dustbin.h \
     gamescene.h \
     harvestor.h \
     mine.h \

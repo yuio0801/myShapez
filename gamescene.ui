@@ -71,6 +71,57 @@
       <normaloff>:/res/facility3_0.png</normaloff>:/res/facility3_0.png</iconset>
     </property>
    </widget>
+   <widget class="QPushButton" name="Havsettletn">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>200</y>
+      <width>50</width>
+      <height>50</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset resource="res.qrc">
+      <normaloff>:/res/facility1_0.png</normaloff>:/res/facility1_0.png</iconset>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="Dustsettletn">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>300</y>
+      <width>50</width>
+      <height>50</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset resource="res.qrc">
+      <normaloff>:/res/facility2_1.png</normaloff>:/res/facility2_1.png</iconset>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="Cutsettletn">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>300</y>
+      <width>50</width>
+      <height>50</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset resource="res.qrc">
+      <normaloff>:/res/facility4_0_0.png</normaloff>:/res/facility4_0_0.png</iconset>
+    </property>
+   </widget>
   </widget>
   <widget class="QWidget" name="WorkPlace" native="true">
    <property name="geometry">
