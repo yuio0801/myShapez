@@ -43,6 +43,10 @@ private:
     bool Load();
     void Init();
     void buff_check();
+    void Exit(int flag);
+    void Save(int flag);
+signals:
+    void close();
 };
 
 #endif // GAMESCENE_H

@@ -343,6 +343,53 @@
      <string>切割器加速</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="exit">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>750</y>
+      <width>50</width>
+      <height>50</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset resource="res.qrc">
+      <normaloff>:/res/facility2_1.png</normaloff>:/res/facility2_1.png</iconset>
+    </property>
+   </widget>
+   <widget class="QLabel" name="exittext">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>800</y>
+      <width>61</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>切割器加速</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="shovel">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>350</y>
+      <width>50</width>
+      <height>50</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset resource="res.qrc">
+      <normaloff>:/res/hoe.png</normaloff>:/res/hoe.png</iconset>
+    </property>
+   </widget>
   </widget>
  </widget>
  <resources>

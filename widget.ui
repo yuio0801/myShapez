@@ -74,9 +74,9 @@
   <widget class="QLabel" name="savedatainfo">
    <property name="geometry">
     <rect>
-     <x>320</x>
+     <x>40</x>
      <y>480</y>
-     <width>171</width>
+     <width>411</width>
      <height>20</height>
     </rect>
    </property>

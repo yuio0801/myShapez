@@ -35,5 +35,6 @@
         <file>res/mineral2.png</file>
         <file>res/mineral1.png</file>
         <file>res/facility0_1.png</file>
+        <file>res/hoe.png</file>
     </qresource>
 </RCC>

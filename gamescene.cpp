@@ -5,22 +5,31 @@
 #include <QDebug>
 #include <QCloseEvent>
 #include <QTimer>
-
+#include <iostream>
+#include <fstream>
+using namespace  std;
 const int SIZE = 50;
+
+extern bool ifload;
+//当前地图最大长宽
+extern int Maxx, Maxy;
+extern int num_mine[2];
+
+extern QString filePath;
+extern int mineral_value[4];
+extern int earned;
+extern int num_base;
 
 int init_harvestor_speed = 15;
 int init_base_speed = 10;
 int init_conveyer_speed = 20;
 int init_cutter_speed = 2000;
-int init_Task = 1;
+
 int money = 0;
 Block *block[30][20];
 
-//当前地图最大长宽
-int Maxx = 10, Maxy = 10;
 QString Facility_name[10]={"error", "harvestor", "base", "conveyer","cutter","dustbin",};
-extern QString filePath;
-int mineral_value[4]={20, 10, 50, 30};
+
 //此时Pos中储存id_x, id_y
 unordered_map<Mine *, Block *> mine_all;
 unordered_map<Harvestor *, Block *> harvestor_all;
@@ -32,18 +41,12 @@ unordered_map<Dustbin *, Block *> dustbin_all;
 map<int, Mineral *> mineral_all;
 int mineral_cnt = 0;
 
-
 int mineral_num[4]={0,0,0,0};
 bool bufflag[4]={0,0,0,0};
 int harvestor_speed = 30;
 int base_speed = 10;
 int conveyer_speed = 40;
 int cutter_speed = 5000;
-
-//int Harvestor::speed = harvestor_speed;
-//int Base::speed = 0xffff;
-//int Conveyer::speed = 20;
-
 int settletype = -1;
 Conveyer *Contobesettle = NULL;
 Harvestor *Hartobesettle = NULL;
@@ -52,7 +55,8 @@ Cutter *Cuttobesettle = NULL;
 
 bool settleable = false;
 int curdir = 0;
-
+int isnew = 0;
+Block *shovelblock;
 GameScene::GameScene(QWidget *parent, bool isload) :
     QWidget(parent),
     ui(new Ui::GameScene)
@@ -124,6 +128,9 @@ GameScene::GameScene(QWidget *parent, bool isload) :
 
     timer4->start(20);
 
+    ui->exittext->setText("Save&Exit");
+    connect(ui->exit, &QPushButton::clicked, this, [this]{this->Exit(isnew);});
+
     //放置
     connect(ui->Consettletn, &QPushButton::clicked, this, [&, this]{
         if(settletype == -1)
@@ -147,7 +154,12 @@ GameScene::GameScene(QWidget *parent, bool isload) :
             settletype = 4; this->settle_mode();
         }
     });
-
+    connect(ui->shovel, &QPushButton::clicked, this, [&, this]{
+        if(settletype == -1)
+        {
+            settletype = 6; this->settle_mode();
+        }
+    });
     Mine *tmp = new Mine(parent, block[0][0], 0);
     tmp->settle();
     tmp = new Mine(parent, block[0][1], 0);
@@ -241,33 +253,140 @@ void GameScene::Init()
     conveyer_all.clear();
 
 }
+void GameScene::Save(int flag)
+{
+    std::ofstream savedata;
+    if(filePath.isEmpty())
+    {
+        filePath = "C:\\Users\\ouyan\\Desktop\\myShapez\\savedata.txt";
+    }
+    savedata.open(filePath.toStdString());
 
+
+    //game_info
+    savedata<<flag<<endl;
+    if(!flag)
+    {
+    savedata<<Maxx<<" "<<Maxy<<endl;
+    for(int i=0;i<4;++i)
+    {
+        savedata<<mineral_num[i]<<" ";
+    }
+    savedata<<endl;
+    savedata<<num_mine[0]<<" "<<num_mine[1]<<endl;
+    savedata<<num_base<<endl;
+    savedata<<base_all.size()<<endl;
+    for(auto pai:base_all)
+    {
+        Block *bl = pai.second;
+        savedata<<bl->id_x<<" "<<bl->id_y<<endl;
+    }
+    savedata<<mine_all.size()<<endl;
+    for(auto pai:mine_all)
+    {
+        Block *bl = pai.second;
+        savedata<<bl->id_x<<" "<<bl->id_y<<endl;
+    }
+    savedata<<harvestor_all.size()<<endl;
+    for(auto pai:harvestor_all)
+    {
+        Harvestor *hav = pai.first;
+        Block *bl = pai.second;
+        savedata<<bl->id_x<<" "<<bl->id_y<<" "<<hav->dir<<endl;
+    }
+    savedata<<conveyer_all.size()<<endl;
+    for(auto pai:conveyer_all)
+    {
+        Conveyer *con = pai.first;
+        Block *bl = pai.second;
+        savedata<<bl->id_x<<" "<<bl->id_y<<" "<<con->dir<<endl;
+    }
+    for(auto pai:cutter_all)
+    {
+        Cutter *cut = pai.first;
+        Block *bl = pai.second;
+        savedata<<bl->id_x<<" "<<bl->id_y<<" "<<cut->dir<<endl;
+    }
+    for(auto pai:dustbin_all)
+    {
+        Block *bl = pai.second;
+        savedata<<bl->id_x<<" "<<bl->id_y<<endl;
+    }
+    for(int i=0;i<4;++i)
+    {
+        savedata<<mineral_num[i]<<" ";
+    }
+    savedata<<endl;
+    for(int i=0;i<4;++i)
+    {
+        if(bufflag[i])
+        savedata<<"1 ";
+        else savedata<<"2 ";
+    }
+    savedata<<endl;
+    savedata<<harvestor_speed<<endl;
+    savedata<<conveyer_speed<<endl;
+    savedata<<cutter_speed<<endl;
+    savedata<<money<<endl;
+    }
+    else
+    {
+    savedata<<Maxx<<" "<<Maxy<<endl;
+    for(int i=0;i<4;++i)
+    {
+        savedata<<mineral_num[i]<<" ";
+    }
+    savedata<<endl;
+    savedata<<num_mine[0]<<" "<<num_mine[1]<<endl;
+    savedata<<num_base<<endl;
+    savedata<<earned + money<<endl;
+    }
+
+    savedata.close();
+}
+void GameScene::Exit(int flag)
+{
+    Save(flag);
+    emit close();
+    this->show();
+    delete this;
+
+}
 void GameScene::buff_check()
 {
     ui->labmineral0->setText(QString::number(mineral_num[0]));
     ui->labmineral1->setText(QString::number(mineral_num[1]));
     ui->labmineral2->setText(QString::number(mineral_num[2]));
     ui->labmineral3->setText(QString::number(mineral_num[3]));
-    if(mineral_num[0] >= 5 && !bufflag[0])
+    if(mineral_num[0] >= 20 && !bufflag[0])
     {
         ui->buff0->show();
         ui->buff0text->show();
         ui->buff0text->setText("传送带加速");
         bufflag[0] = 1;
     }
-    if(mineral_num[1] >= 5 && !bufflag[1])
+    if(mineral_num[1] >= 30 && !bufflag[1])
     {
         ui->buff1->show();
         ui->buff1text->show();
         ui->buff1text->setText("采矿器加速");
         bufflag[1] = 1;
     }
-    if(mineral_num[2] >= 5 && !bufflag[2])
+    if(mineral_num[2] >= 50 && !bufflag[2])
     {
         ui->buff2->show();
         ui->buff2text->show();
         ui->buff2text->setText("切割器加速");
         bufflag[2] = 1;
+    }
+    if(mineral_num[0] >= 50 && mineral_num[1] >= 50 && mineral_num[2] >= 50)
+    {
+        timer0->stop();
+        timer1->stop();
+        timer2->stop();
+        timer3->stop();
+        timer4->stop();
+        ui->exittext->setText("Congratulations!");
     }
 }
 
@@ -367,6 +486,10 @@ void GameScene::settle_mode()
         Cuttobesettle = new Cutter(NULL, block[0][0], 0, 0, NULL);
         settleable = Cuttobesettle->settle_available();
     }
+    if(settletype == 6)
+    {
+        shovelblock = block[0][0];
+    }
 }
 void GameScene::paintEvent(QPaintEvent* event)
 {
@@ -418,7 +541,14 @@ void GameScene::paintEvent(QPaintEvent* event)
         {
             pos = Cuttobesettle->bl;
             painter.drawPixmap(pos->p.pos_x, pos->p.pos_y, icon);
+            pos = Cuttobesettle->another->bl;
+            painter.drawPixmap(pos->p.pos_x, pos->p.pos_y, icon);
             painter.drawPixmap(1600, 900, Cuttobesettle->icon);
+        }
+        if(settletype == 6)
+        {
+            icon.load(":/res/hoe");
+            painter.drawPixmap(shovelblock->p.pos_x, shovelblock->p.pos_y, icon);
         }
     }
 
@@ -478,6 +608,13 @@ void GameScene::keyPressEvent(QKeyEvent *event)
                         settleable = Cuttobesettle->settle_available();
                     }
                 }
+                if(settletype == 6)
+                {
+                    if(shovelblock->id_y != 0)
+                    {
+                        shovelblock = block[shovelblock->id_x][shovelblock->id_y - 1];
+                    }
+                }
                 break;
             case Qt::Key_S:
                 if(settletype == 3)
@@ -512,6 +649,13 @@ void GameScene::keyPressEvent(QKeyEvent *event)
                         Cuttobesettle->bl = block[Cuttobesettle->bl->id_x][Cuttobesettle->bl->id_y + 1];
                         Cuttobesettle->another->bl = block[Cuttobesettle->another->bl->id_x][Cuttobesettle->another->bl->id_y + 1];
                         settleable = Cuttobesettle->settle_available();
+                    }
+                }
+                if(settletype == 6)
+                {
+                    if(shovelblock->id_y != Maxy - 1)
+                    {
+                        shovelblock = block[shovelblock->id_x][shovelblock->id_y + 1];
                     }
                 }
                 break;
@@ -550,6 +694,13 @@ void GameScene::keyPressEvent(QKeyEvent *event)
                         settleable = Cuttobesettle->settle_available();
                     }
                 }
+                if(settletype == 6)
+                {
+                    if(shovelblock->id_x != 0)
+                    {
+                        shovelblock = block[shovelblock->id_x - 1][shovelblock->id_y];
+                    }
+                }
                 break;
             case Qt::Key_D:
                 if(settletype == 3)
@@ -586,9 +737,16 @@ void GameScene::keyPressEvent(QKeyEvent *event)
                         settleable = Cuttobesettle->settle_available();
                     }
                 }
+                if(settletype == 6)
+                {
+                    if(shovelblock->id_x != Maxx - 1)
+                    {
+                        shovelblock = block[shovelblock->id_x + 1][shovelblock->id_y];
+                    }
+                }
                 break;
             case Qt::Key_Z:
-                if(!settleable) return;
+                //if(!settleable) return;
                 if(settletype == 3)
                 {
                     if(Contobesettle->settle_available())
@@ -628,6 +786,13 @@ void GameScene::keyPressEvent(QKeyEvent *event)
                         curdir = 0;
                     }
 
+                }
+                if(settletype == 6)
+                {
+                    shovelblock->clear();
+                    shovelblock = NULL;
+                    settletype = -1;
+                    curdir = 0;
                 }
                 break;
             case Qt::Key_R:
@@ -670,6 +835,11 @@ void GameScene::keyPressEvent(QKeyEvent *event)
                         delete Cuttobesettle;
                         settletype = -1;
 
+                    }
+                    if(settletype == 6)
+                    {
+                        shovelblock = NULL;
+                        settletype = -1;
                     }
                 break;
         }
