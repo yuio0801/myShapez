@@ -33,7 +33,21 @@ Dustbin::Dustbin(QObject *parent, Block *init_bl)
 
 Dustbin::~Dustbin()
 {
+        bl->facility = NULL;
     qDebug()<<"delete dustbin";
+}
+void Dustbin::settle()
+{
+    if(!bl)
+    {
+        qDebug()<<Facility_name[type] +" bl error";
+        return ;
+    }
+    assert(settle_available());
+
+    bl->clear();
+    bl->facility = this;
+    dustbin_all.insert(make_pair(this,bl));
 }
 
 void Dustbin::Mineral_in(Mineral *tmp)

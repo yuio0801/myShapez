@@ -12,11 +12,12 @@ public:
     explicit Harvestor(QObject *parent = nullptr, Block *init_bl = NULL, int init_dir = 0);
     ~Harvestor();
     virtual bool settle_available();
-    virtual void settle();
+    void settle();
     //static int speed;
     void Mineral_in(Mineral *tmp);
     bool Mineral_tackle(Mineral *tmp);
     bool Mineral_out(Mineral *tmp);
+    void resetdir();
 };
 
 

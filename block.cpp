@@ -52,7 +52,67 @@ Block::~Block()
     }
 
 }
+void Block::clear()
+{
+    if(facility)
+    {
+        if(facility->mineral_outque)
+        {
+                Mineral *tmp = facility->mineral_outque;
+                int idx = 0;
+                for(auto pai:mineral_all)
+                {
+                    if(pai.second == tmp)
+                    {
+                        idx = pai.first;
+                        break;
+                    }
+                }
+                mineral_all.erase(idx);
+                delete tmp;
 
+            }
+            if(facility->mineral_inque)
+            {
+                Mineral *tmp = facility->mineral_inque;
+                int idx = 0;
+                for(auto pai:mineral_all)
+                {
+                    if(pai.second == tmp)
+                    {
+                        idx = pai.first;
+                        break;
+                    }
+                }
+                mineral_all.erase(idx);
+                delete tmp;
+        }
+            if(facility->type == 4)
+            {
+                Cutter *cutter = (Cutter*)facility;
+                if(cutter->part == 1)
+                {
+                    cutter = cutter->another;
+                }
+                cutter_all.erase(cutter);
+                delete cutter->another;
+                delete cutter;
+            }
+            else
+            {
+                switch(facility->type)
+                {
+                case 1:harvestor_all.erase(((Harvestor*)facility));break;
+                case 2:base_all.erase((Base*)facility);break;
+                case 3:conveyer_all.erase((Conveyer*)facility);break;
+                case 5:dustbin_all.erase((Dustbin*)facility);break;
+                }
+
+                delete facility;
+            }
+        }
+
+}
 Facility::Facility(QObject *parent, Block *init_bl, int init_type, int init_dir, bool init_rotatable)
     : QObject{parent}
 {

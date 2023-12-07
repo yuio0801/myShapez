@@ -11,7 +11,7 @@ const int SIZE = 50;
 int init_harvestor_speed = 15;
 int init_base_speed = 10;
 int init_conveyer_speed = 20;
-int init_cutter_speed = 1000;
+int init_cutter_speed = 2000;
 int init_Task = 1;
 int money = 0;
 Block *block[30][20];
@@ -33,11 +33,11 @@ map<int, Mineral *> mineral_all;
 int mineral_cnt = 0;
 
 
-int mineral_num[4];
-
-int harvestor_speed = 15;
+int mineral_num[4]={0,0,0,0};
+bool bufflag[4]={0,0,0,0};
+int harvestor_speed = 30;
 int base_speed = 10;
-int conveyer_speed = 20;
+int conveyer_speed = 40;
 int cutter_speed = 5000;
 
 //int Harvestor::speed = harvestor_speed;
@@ -53,7 +53,7 @@ Cutter *Cuttobesettle = NULL;
 bool settleable = false;
 int curdir = 0;
 
-GameScene::GameScene(QWidget *parent) :
+GameScene::GameScene(QWidget *parent, bool isload) :
     QWidget(parent),
     ui(new Ui::GameScene)
 {
@@ -63,7 +63,7 @@ GameScene::GameScene(QWidget *parent) :
     setFixedSize(1700,1000);
     setWindowTitle("myShapez");
 
-    if(!filePath.isNull())
+    if(isload)
     {
         if(!Load())
         {
@@ -85,9 +85,6 @@ GameScene::GameScene(QWidget *parent) :
             ++GameTime;
             ui->TimeLabel->setText("GameTime:" + QString::number(GameTime) + "s");
     });
-    connect(timer0, &QTimer::timeout, this, [=](){
-        ui->MoneyLabel->setText("Money:" + QString::number(money));
-    });
     timer0->start(1000);
 
     //Block *test = new Block();
@@ -95,26 +92,61 @@ GameScene::GameScene(QWidget *parent) :
     {
         for(int j = 0; j < Maxx; ++j)
         {
-            block[i][j] = new Block(ui->WorkPlace, i, j);
+            block[i][j] = new Block(NULL, i, j);
         }
     }
-    connect(timer1, &QTimer::timeout, this, [this]{this->create_mineral();});//Mine
+
+    connect(timer1, &QTimer::timeout, this, [this]{this->create_mineral();});//Harvestor
     timer1->start(harvestor_speed);
 
     connect(timer2, &QTimer::timeout, this, [this]{this->move_mineral();});//Conveyer
     timer2->start(conveyer_speed);
 
-//    connect(timer3, &QTimer::timeout, this, [this]{this->remove_mineral;});//Base
-//    timer3->start(base_speed);
 
     connect(timer4, &QTimer::timeout, this, [this]{this->update();});//刷新屏幕
-    timer4->start(100);
+
+    connect(timer4, &QTimer::timeout, this, [=](){
+        ui->MoneyLabel->setText("Money:" + QString::number(money));
+    });
+    connect(timer4, &QTimer::timeout, this, [this]{this->buff_check();});
+
+    connect(ui->buff0, &QPushButton::clicked, this, [&]{conveyer_speed /= 2;});
+    connect(ui->buff0, &QPushButton::clicked, ui->buff0, [this]{ui->buff0->hide(); ui->buff0text->hide();timer2->setInterval(conveyer_speed);});
+
+    connect(ui->buff1, &QPushButton::clicked, this, [&]{harvestor_speed /= 2;});
+    connect(ui->buff1, &QPushButton::clicked, ui->buff1, [this]{ui->buff1->hide(); ui->buff1text->hide();timer1->setInterval(harvestor_speed);});
+
+    connect(ui->buff2, &QPushButton::clicked, this, [&]{cutter_speed /= 2;});
+    connect(ui->buff2, &QPushButton::clicked, ui->buff2, [this]{ui->buff2->hide(); ui->buff2text->hide();});
+
+    ui->buff0->hide();ui->buff1->hide();ui->buff2->hide();
+    ui->buff0text->hide();ui->buff1text->hide();ui->buff2text->hide();
+
+    timer4->start(20);
 
     //放置
-    connect(ui->Consettletn, &QPushButton::clicked, this, [&, this]{settletype = 3; this->settle_mode();});
-    connect(ui->Havsettletn, &QPushButton::clicked, this, [&, this]{settletype = 1; this->settle_mode();});
-    connect(ui->Dustsettletn, &QPushButton::clicked, this, [&, this]{settletype = 5; this->settle_mode();});
-    connect(ui->Cutsettletn, &QPushButton::clicked, this, [&, this]{settletype = 4; this->settle_mode();});
+    connect(ui->Consettletn, &QPushButton::clicked, this, [&, this]{
+        if(settletype == -1)
+            {
+            settletype = 3; this->settle_mode();}
+            }
+        );
+    connect(ui->Havsettletn, &QPushButton::clicked, this, [&, this]{
+            if(settletype == -1)
+            {
+            settletype = 1; this->settle_mode();}
+            });
+    connect(ui->Dustsettletn, &QPushButton::clicked, this, [&, this]{
+        if(settletype == -1)
+        {
+            settletype = 5; this->settle_mode();}
+        });
+    connect(ui->Cutsettletn, &QPushButton::clicked, this, [&, this]{
+        if(settletype == -1)
+        {
+            settletype = 4; this->settle_mode();
+        }
+    });
 
     Mine *tmp = new Mine(parent, block[0][0], 0);
     tmp->settle();
@@ -126,27 +158,31 @@ GameScene::GameScene(QWidget *parent) :
     {
         hav->settle();
     }
+    qDebug()<<conveyer_all.size();
     hav = new Harvestor(parent, block[0][1], 1);
     if(hav->settle_available())
     {
         hav->settle();
     }
+    qDebug()<<conveyer_all.size();
     Base *base = new Dustbin(parent, block[2][0]);
     if(base->settle_available())
     {
         base->settle();
     }
+    qDebug()<<conveyer_all.size();
     base = new Base(parent, block[2][2]);
     if(base->settle_available())
     {
         base->settle();
     }
+    qDebug()<<conveyer_all.size();
     Cutter *cut = new Cutter(parent, block[2][1], 0, 2);
     if(cut->settle_available())
     {
         cut->Cutter_settle();
     }
-
+qDebug()<<conveyer_all.size();
 
 
     Conveyer *conv;
@@ -155,6 +191,7 @@ GameScene::GameScene(QWidget *parent) :
     {
         conv->settle();
     }
+    qDebug()<<conveyer_all.size();
     conv = new Conveyer(parent, block[2][0], 7);
     if(conv->settle_available())
     {
@@ -164,22 +201,25 @@ GameScene::GameScene(QWidget *parent) :
     {
         delete conv;
     }
+    qDebug()<<conveyer_all.size();
     conv = new Conveyer(parent, block[2][4], 3);
     if(conv->settle_available())
     {
         conv->settle();
     }
+    qDebug()<<conveyer_all.size();
     conv = new Conveyer(parent, block[1][2], 2);
     if(conv->settle_available())
     {
         conv->settle();
     }
+    qDebug()<<conveyer_all.size();
     base = new Base(parent, block[1][5]);
     if(base->settle_available())
     {
         base->settle();
     }
-
+qDebug()<<conveyer_all.size();
     //delete block[0][0];
     //block[0][0]=NULL;
     //qDebug()<<"delete asda";
@@ -201,6 +241,37 @@ void GameScene::Init()
     conveyer_all.clear();
 
 }
+
+void GameScene::buff_check()
+{
+    ui->labmineral0->setText(QString::number(mineral_num[0]));
+    ui->labmineral1->setText(QString::number(mineral_num[1]));
+    ui->labmineral2->setText(QString::number(mineral_num[2]));
+    ui->labmineral3->setText(QString::number(mineral_num[3]));
+    if(mineral_num[0] >= 5 && !bufflag[0])
+    {
+        ui->buff0->show();
+        ui->buff0text->show();
+        ui->buff0text->setText("传送带加速");
+        bufflag[0] = 1;
+    }
+    if(mineral_num[1] >= 5 && !bufflag[1])
+    {
+        ui->buff1->show();
+        ui->buff1text->show();
+        ui->buff1text->setText("采矿器加速");
+        bufflag[1] = 1;
+    }
+    if(mineral_num[2] >= 5 && !bufflag[2])
+    {
+        ui->buff2->show();
+        ui->buff2text->show();
+        ui->buff2text->setText("切割器加速");
+        bufflag[2] = 1;
+    }
+}
+
+
 void GameScene::create_mineral()
 {
     for(auto pai :harvestor_all)
@@ -329,28 +400,25 @@ void GameScene::paintEvent(QPaintEvent* event)
         {
             pos = Contobesettle->bl;
             painter.drawPixmap(pos->p.pos_x, pos->p.pos_y, icon);
-            painter.drawPixmap(1650, 950, Contobesettle->icon);
+            painter.drawPixmap(1600, 900, Contobesettle->icon);
         }
         if(settletype == 1)
         {
             pos = Hartobesettle->bl;
             painter.drawPixmap(pos->p.pos_x, pos->p.pos_y, icon);
-            painter.drawPixmap(1650, 950, Hartobesettle->icon);
+            painter.drawPixmap(1600, 900, Hartobesettle->icon);
         }
         if(settletype == 5)
         {
             pos = Dustobesettle->bl;
             painter.drawPixmap(pos->p.pos_x, pos->p.pos_y, icon);
-            painter.drawPixmap(1650, 950, Dustobesettle->icon);
+            painter.drawPixmap(1600, 900, Dustobesettle->icon);
         }
         if(settletype == 4)
         {
             pos = Cuttobesettle->bl;
             painter.drawPixmap(pos->p.pos_x, pos->p.pos_y, icon);
-            painter.drawPixmap(1650, 950, Cuttobesettle->icon);
-            pos = Cuttobesettle->another->bl;
-            painter.drawPixmap(pos->p.pos_x, pos->p.pos_y, icon);
-            painter.drawPixmap(1650, 950, Cuttobesettle->another->icon);
+            painter.drawPixmap(1600, 900, Cuttobesettle->icon);
         }
     }
 
@@ -384,6 +452,32 @@ void GameScene::keyPressEvent(QKeyEvent *event)
                         settleable = Contobesettle->settle_available();
                     }
                 }
+                if(settletype == 1)
+                {
+                    if(Hartobesettle->bl->id_y != 0)
+                    {
+                        Hartobesettle->bl = block[Hartobesettle->bl->id_x][Hartobesettle->bl->id_y - 1];
+                        settleable = Hartobesettle->settle_available();
+                    }
+                }
+                if(settletype == 5)
+                {
+                    if(Dustobesettle->bl->id_y != 0)
+                    {
+                        Dustobesettle->bl = block[Dustobesettle->bl->id_x][Dustobesettle->bl->id_y - 1];
+                        settleable = Dustobesettle->settle_available();
+                    }
+                }
+                if(settletype == 4)
+                {
+                    if(Cuttobesettle->bl->id_y != 0 && Cuttobesettle->another->bl->id_y != 0)
+                    {
+
+                        Cuttobesettle->bl = block[Cuttobesettle->bl->id_x][Cuttobesettle->bl->id_y - 1];
+                        Cuttobesettle->another->bl = block[Cuttobesettle->another->bl->id_x][Cuttobesettle->another->bl->id_y - 1];
+                        settleable = Cuttobesettle->settle_available();
+                    }
+                }
                 break;
             case Qt::Key_S:
                 if(settletype == 3)
@@ -392,6 +486,32 @@ void GameScene::keyPressEvent(QKeyEvent *event)
                     {
                         Contobesettle->bl = block[Contobesettle->bl->id_x][Contobesettle->bl->id_y + 1];
                         settleable = Contobesettle->settle_available();
+                    }
+                }
+                if(settletype == 1)
+                {
+                    if(Hartobesettle->bl->id_y != Maxy - 1)
+                    {
+                        Hartobesettle->bl = block[Hartobesettle->bl->id_x][Hartobesettle->bl->id_y + 1];
+                        settleable = Hartobesettle->settle_available();
+                    }
+                }
+                if(settletype == 5)
+                {
+                    if(Dustobesettle->bl->id_y != Maxy - 1)
+                    {
+                        Dustobesettle->bl = block[Dustobesettle->bl->id_x][Dustobesettle->bl->id_y + 1];
+                        settleable = Dustobesettle->settle_available();
+                    }
+                }
+                if(settletype == 4)
+                {
+                    if(Cuttobesettle->bl->id_y != Maxy - 1 && Cuttobesettle->another->bl->id_y != Maxy - 1)
+                    {
+
+                        Cuttobesettle->bl = block[Cuttobesettle->bl->id_x][Cuttobesettle->bl->id_y + 1];
+                        Cuttobesettle->another->bl = block[Cuttobesettle->another->bl->id_x][Cuttobesettle->another->bl->id_y + 1];
+                        settleable = Cuttobesettle->settle_available();
                     }
                 }
                 break;
@@ -404,6 +524,32 @@ void GameScene::keyPressEvent(QKeyEvent *event)
                         settleable = Contobesettle->settle_available();
                     }
                 }
+                if(settletype == 1)
+                {
+                    if(Hartobesettle->bl->id_x != 0)
+                    {
+                        Hartobesettle->bl = block[Hartobesettle->bl->id_x - 1][Hartobesettle->bl->id_y];
+                        settleable = Hartobesettle->settle_available();
+                    }
+                }
+                if(settletype == 5)
+                {
+                    if(Dustobesettle->bl->id_x != 0)
+                    {
+                        Dustobesettle->bl = block[Dustobesettle->bl->id_x - 1][Dustobesettle->bl->id_y];
+                        settleable = Dustobesettle->settle_available();
+                    }
+                }
+                if(settletype == 4)
+                {
+                    if(Cuttobesettle->bl->id_x != 0 && Cuttobesettle->another->bl->id_x != 0)
+                    {
+
+                        Cuttobesettle->bl = block[Cuttobesettle->bl->id_x - 1][Cuttobesettle->bl->id_y];
+                        Cuttobesettle->another->bl = block[Cuttobesettle->another->bl->id_x - 1][Cuttobesettle->another->bl->id_y];
+                        settleable = Cuttobesettle->settle_available();
+                    }
+                }
                 break;
             case Qt::Key_D:
                 if(settletype == 3)
@@ -414,8 +560,35 @@ void GameScene::keyPressEvent(QKeyEvent *event)
                         settleable = Contobesettle->settle_available();
                     }
                 }
+                if(settletype == 1)
+                {
+                    if(Hartobesettle->bl->id_x != Maxx - 1)
+                    {
+                        Hartobesettle->bl = block[Hartobesettle->bl->id_x + 1][Hartobesettle->bl->id_y];
+                        settleable = Hartobesettle->settle_available();
+                    }
+                }
+                if(settletype == 5)
+                {
+                    if(Dustobesettle->bl->id_x != Maxx - 1)
+                    {
+                        Dustobesettle->bl = block[Dustobesettle->bl->id_x + 1][Dustobesettle->bl->id_y];
+                        settleable = Dustobesettle->settle_available();
+                    }
+                }
+                if(settletype == 4)
+                {
+                    if(Cuttobesettle->bl->id_x != Maxx - 1 && Cuttobesettle->another->bl->id_x != Maxx - 1)
+                    {
+
+                        Cuttobesettle->bl = block[Cuttobesettle->bl->id_x + 1][Cuttobesettle->bl->id_y];
+                        Cuttobesettle->another->bl = block[Cuttobesettle->another->bl->id_x + 1][Cuttobesettle->another->bl->id_y];
+                        settleable = Cuttobesettle->settle_available();
+                    }
+                }
                 break;
             case Qt::Key_Z:
+                if(!settleable) return;
                 if(settletype == 3)
                 {
                     if(Contobesettle->settle_available())
@@ -426,13 +599,53 @@ void GameScene::keyPressEvent(QKeyEvent *event)
                     }
 
                 }
+                if(settletype == 1)
+                {
+                    if(Hartobesettle->settle_available())
+                    {
+                        Hartobesettle->settle();
+                        settletype = -1;
+                        curdir = 0;
+                    }
+
+                }
+                if(settletype == 5)
+                {
+                    if(Dustobesettle->settle_available())
+                    {
+                        Dustobesettle->settle();
+                        settletype = -1;
+                        curdir = 0;
+                    }
+
+                }
+                if(settletype == 4)
+                {
+                    if(Cuttobesettle->settle_available())
+                    {
+                        Cuttobesettle->Cutter_settle();
+                        settletype = -1;
+                        curdir = 0;
+                    }
+
+                }
                 break;
             case Qt::Key_R:
                 if(settletype == 3)
                 {
-                    Contobesettle->dir = (Contobesettle->dir + 1) %12;
+                    Contobesettle->dir = (Contobesettle->dir + 1) % 12;
                     curdir = Contobesettle->dir;
                     Contobesettle->resetdir();
+                }
+                if(settletype == 1)
+                {
+                    Hartobesettle->dir = (Hartobesettle->dir + 1) % 4;
+                    curdir = Hartobesettle->dir;
+                    Hartobesettle->resetdir();
+                }
+                if(settletype == 4)
+                {
+                    Cuttobesettle->resetdir();
                 }
                 break;
             case Qt::Key_X:
@@ -440,6 +653,23 @@ void GameScene::keyPressEvent(QKeyEvent *event)
                     {
                         delete Contobesettle;
                         settletype = -1;
+                    }
+                    if(settletype == 1)
+                    {
+                        delete Hartobesettle;
+                        settletype = -1;
+                    }
+                    if(settletype == 5)
+                    {
+                        delete Dustobesettle;
+                        settletype = -1;
+                    }
+                    if(settletype == 4)
+                    {
+                        delete Cuttobesettle->another;
+                        delete Cuttobesettle;
+                        settletype = -1;
+
                     }
                 break;
         }

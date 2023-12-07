@@ -39,6 +39,7 @@ public:
     Pos p, middle;
     Facility *facility;
     Mine *mine;
+    void clear();
 signals:
 
 };

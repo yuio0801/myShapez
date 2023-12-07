@@ -56,6 +56,6 @@ void Mine::settle()
     //if(settle_available())
     //bl->clear_facility();
     bl->mine = this;
-    mine_all.insert(make_pair((Mine*)bl->facility, bl));
+    mine_all.insert(make_pair(this, bl));
 
 }

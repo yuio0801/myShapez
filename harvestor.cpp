@@ -30,12 +30,11 @@ Harvestor::Harvestor(QObject *parent, Block *init_bl, int init_dir)
     if(icon.isNull())
         qDebug()<<"open harvestor icon fail";
 
-
-    //qDebug()<<this->rotatable;
 }
 
 Harvestor::~Harvestor()
 {
+        bl->facility = NULL;
     qDebug()<<"delete harvestor";
 }
 
@@ -46,7 +45,7 @@ bool Harvestor::settle_available()
         qDebug()<<Facility_name[type] +" bl error";
         return false;
     }
-    if(bl->facility == NULL && bl->mine) return true;
+    if(bl->mine) return true;
     else
     {
         qDebug()<<"Can't put harvestor here";
@@ -61,11 +60,14 @@ void Harvestor::settle()
         qDebug()<<Facility_name[type] +" bl error";
         return ;
     }
-    //if(settle_available())
-    assert(bl->mine != NULL);
+    assert(settle_available());
+
+    bl->clear();
     bl->facility = this;
-    harvestor_all.insert(make_pair(this, bl));
+    harvestor_all.insert(make_pair(this,bl));
 }
+
+
 void Harvestor::Mineral_in(Mineral *tmp)
 {
     assert(0);
@@ -75,6 +77,29 @@ bool Harvestor::Mineral_tackle(Mineral *tmp)
 {
     assert(0);
     return false;
+}
+void Harvestor::resetdir()
+{
+    icon.load(":/res/facility1_" + QString::number(dir));
+    if(icon.isNull())
+        qDebug()<<"open harvestor icon fail";
+    switch(dir)
+    {
+    case 0:
+        out_dir = 0;
+        break;
+    case 1:
+        out_dir = 1;
+        break;
+    case 2:
+        out_dir = 2;
+        break;
+    case 3:
+        out_dir = 3;
+        break;
+    default:
+        break;
+    }
 }
 bool Harvestor::Mineral_out(Mineral *tmp)
 {
@@ -94,10 +119,15 @@ bool Harvestor::Mineral_out(Mineral *tmp)
         else
         {
             nfac = nxt->facility;
-            if(nfac->in_dir == -1 || nfac->in_dir == 0)
+            if(nfac->type != 3)
+            {
+                flag = false;
+            }
+            else if(nfac->in_dir == -1 || nfac->in_dir == 0)
             {
                 flag = true;
             }
+
         }
         //if(/*TODO:CUTTER*/)
         }
@@ -111,6 +141,11 @@ bool Harvestor::Mineral_out(Mineral *tmp)
         else
         {
             nfac = nxt->facility;
+            if(nfac->type != 3)
+            {
+                flag = false;
+            }
+            else
             if(nfac->in_dir == -1 || nfac->in_dir == 1)
             {
                 //assert(nfac->mineral_inque == NULL);
@@ -128,6 +163,11 @@ bool Harvestor::Mineral_out(Mineral *tmp)
         else
         {
             nfac = nxt->facility;
+            if(nfac->type != 3)
+            {
+                flag = false;
+            }
+            else
             if(nfac->in_dir == -1 || nfac->in_dir == 2)
             {
                 flag = true;
@@ -144,6 +184,11 @@ bool Harvestor::Mineral_out(Mineral *tmp)
         else
         {
             nfac = nxt->facility;
+            if(nfac->type != 3)
+            {
+                flag = false;
+            }
+            else
             if(nfac->in_dir == -1 || nfac->in_dir == 3)
             {
                 flag = true;

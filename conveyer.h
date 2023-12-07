@@ -16,5 +16,6 @@ public:
     bool Mineral_tackle(Mineral *tmp);
     void Mineral_move();
     void resetdir();
+    void settle();
 };
 #endif // CONVEYER_H

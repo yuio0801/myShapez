@@ -15,7 +15,7 @@ public:
     virtual void Mineral_in(Mineral *tmp);
     virtual bool Mineral_tackle(Mineral *tmp);
     virtual bool Mineral_out(Mineral *tmp);\
-
+        void settle();
         signals:
     void Mineral_trigger(Mineral *tmp);
 };

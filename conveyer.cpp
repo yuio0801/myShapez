@@ -83,9 +83,23 @@ Conveyer::Conveyer(QObject *parent, Block *init_bl, int init_dir)
 
 Conveyer::~Conveyer()
 {
+    bl->facility = NULL;
     qDebug()<<"delete conveyer";
 }
 
+void Conveyer::settle()
+{
+    if(!bl)
+    {
+        qDebug()<<Facility_name[type] +" bl error";
+        return ;
+    }
+    assert(settle_available());
+
+    bl->clear();
+    bl->facility = this;
+    conveyer_all.insert(make_pair(this,bl));
+}
 
 bool Conveyer::Mineral_tackle(Mineral *tmp)
 {

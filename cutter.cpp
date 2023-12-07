@@ -16,7 +16,7 @@ extern int money;
 extern int mineral_num[4];
 extern int mineral_value[4];
 extern Block* block[30][20];
-
+extern int curdir;
 Cutter::Cutter(QObject *parent, Block *init_bl, int init_part, int init_dir, Cutter *init_another)
     :Facility(parent, init_bl, 4, init_dir, true)
 {
@@ -57,6 +57,7 @@ Cutter::Cutter(QObject *parent, Block *init_bl, int init_part, int init_dir, Cut
 
 Cutter::~Cutter()
 {
+    bl->facility = NULL;
     qDebug()<<"delete cutter";
 }
 
@@ -75,13 +76,13 @@ void Cutter::resetdir()
     {
         return ;
     }
-    another->bl->facility = NULL;
     another->bl = block[nex][ney];
     dir = (dir + 1) % 4;
     in_dir = out_dir = dir;
     another->dir = another->in_dir = another->out_dir = dir;
     icon.load(":/res/facility4_0_" + QString::number(dir));
     another->icon.load(":/res/facility4_1_" + QString::number(dir));
+    curdir = dir;
 }
 
 void Cutter::cut_mineral()
@@ -99,7 +100,7 @@ void Cutter::cut_mineral()
     default:assert(0);
     }
 
-    Mineral *tmp = new Mineral(NULL, bl1, bl1->middle.pos_x, bl1->middle.pos_y, 4);
+    Mineral *tmp = new Mineral(NULL, bl1, bl1->middle.pos_x, bl1->middle.pos_y, 2);
     switch(dir)
     {
     case 0:tmp->p.pos_y += SIZE / 2; break;
@@ -138,20 +139,9 @@ bool Cutter::settle_available()
         flag = false;
         return flag;
     }
-    if(bl->mine)
+    if(bl->mine || bl->facility)
     {
         flag = false;
-    }
-    if(bl->facility)
-    {
-        if(bl->facility->type == 1 || bl->facility->type == 2)
-        {
-            flag = false;
-        }
-        else
-        {
-            flag = true;
-        }
     }
     if(part == 0)
     {
@@ -165,16 +155,9 @@ bool Cutter::settle_available()
         {
             flag = false;
         }
-        if(another->bl->facility)
+        if(another->bl->mine || another->bl->facility)
         {
-            if(another->bl->facility->type == 1 || another->bl->facility->type == 2)
-            {
-                flag = false;
-            }
-            else
-            {
-                flag = true;
-            }
+            flag = false;
         }
     }
     return flag;
@@ -184,7 +167,7 @@ bool Cutter::Cutter_out()
 {
     Mineral *tmp;
     if(part == 0)
-    tmp = new Mineral(NULL, bl, bl->middle.pos_x, bl->middle.pos_y, 4);
+    tmp = new Mineral(NULL, bl, bl->middle.pos_x, bl->middle.pos_y, 2);
     else
     tmp = new Mineral(NULL, bl, bl->middle.pos_x, bl->middle.pos_y, 3);
     switch(dir)
@@ -220,6 +203,9 @@ bool Cutter::Cutter_out()
 void Cutter::Cutter_settle()
 {
     assert(part == 0);
+
+
+
     this->Facility::settle();
     another->Facility::settle();
     return ;

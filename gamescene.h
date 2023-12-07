@@ -20,7 +20,7 @@ class GameScene : public QWidget
     Q_OBJECT
 
 public:
-    explicit GameScene(QWidget *parent = nullptr);
+    explicit GameScene(QWidget *parent = nullptr, bool ifload = false);
     void paintEvent(QPaintEvent *event);
     void closeEvent(QCloseEvent *event);
     void keyPressEvent(QKeyEvent *event);
@@ -42,6 +42,7 @@ private:
     void settle_mode();
     bool Load();
     void Init();
+    void buff_check();
 };
 
 #endif // GAMESCENE_H

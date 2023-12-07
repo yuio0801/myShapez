@@ -13,6 +13,7 @@ public:
     ~Dustbin();
     void Mineral_in(Mineral *tmp);
     bool Mineral_tackle(Mineral *tmp);
+    void settle();
 signals:
     void Mineral_trigger(Mineral *tmp);
 };

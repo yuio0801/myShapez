@@ -20,12 +20,10 @@
         <file>res/facility3_9.png</file>
         <file>res/facility3_10.png</file>
         <file>res/facility3_11.png</file>
-        <file>res/mineral1.png</file>
         <file>res/arrow0.png</file>
         <file>res/arrow1.png</file>
         <file>res/facility2_1.png</file>
         <file>res/mineral3.png</file>
-        <file>res/mineral4.png</file>
         <file>res/facility4_0_0.png</file>
         <file>res/facility4_0_1.png</file>
         <file>res/facility4_0_2.png</file>
@@ -34,5 +32,8 @@
         <file>res/facility4_1_1.png</file>
         <file>res/facility4_1_2.png</file>
         <file>res/facility4_1_3.png</file>
+        <file>res/mineral2.png</file>
+        <file>res/mineral1.png</file>
+        <file>res/facility0_1.png</file>
     </qresource>
 </RCC>

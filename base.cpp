@@ -33,8 +33,24 @@ Base::Base(QObject *parent, Block *init_bl)
 
 Base::~Base()
 {
+        bl->facility = NULL;
     qDebug()<<"delete base";
 }
+
+void Base::settle()
+{
+    if(!bl)
+    {
+        qDebug()<<Facility_name[type] +" bl error";
+        return ;
+    }
+    assert(settle_available());
+
+    bl->clear();
+    bl->facility = this;
+    base_all.insert(make_pair(this,bl));
+}
+
 
 void Base::Mineral_in(Mineral *tmp)
 {
@@ -45,6 +61,7 @@ void Base::Mineral_in(Mineral *tmp)
 bool Base::Mineral_tackle(Mineral *tmp)
 {
     money += mineral_value[tmp->type];
+    mineral_num[tmp->type]++;
     int idx = 0;
     for(auto pai:mineral_all)
     {
