@@ -14,8 +14,8 @@ extern map<int, Mineral *> mineral_all;
 extern int mineral_cnt;
 
 extern int money;
-extern int mineral_num[4];
-extern int mineral_value[4];
+extern int mineral_num[5];
+extern int mineral_value[5];
 extern Block* block[30][20];
 Dustbin::Dustbin(QObject *parent, Block *init_bl)
     :Base(parent, init_bl)
@@ -33,7 +33,6 @@ Dustbin::Dustbin(QObject *parent, Block *init_bl)
 
 Dustbin::~Dustbin()
 {
-        bl->facility = NULL;
     qDebug()<<"delete dustbin";
 }
 void Dustbin::settle()

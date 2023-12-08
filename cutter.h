@@ -22,6 +22,8 @@ public:
     void resetdir();
     void Cutter_settle();
     bool Cutter_out();
+    void ifout();
+    void settle();
 private:
     void cut_mineral();
 

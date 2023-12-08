@@ -17,6 +17,7 @@ SOURCES += \
     harvestor.cpp \
     main.cpp \
     mine.cpp \
+    rotater.cpp \
     store.cpp \
     widget.cpp
 
@@ -29,6 +30,7 @@ HEADERS += \
     gamescene.h \
     harvestor.h \
     mine.h \
+    rotater.h \
     store.h \
     widget.h
 

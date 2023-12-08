@@ -1,4 +1,4 @@
-#include "conveyer.h"
+#include "rotater.h"
 
 extern int Maxx,Maxy;
 extern QString Facility_name[10];
@@ -9,7 +9,9 @@ extern unordered_map<Harvestor *, Block *> harvestor_all;
 extern unordered_map<Base *, Block *> base_all;
 extern unordered_map<Conveyer *, Block *> conveyer_all;
 extern unordered_map<Cutter *,Block *>cutter_all;
+extern unordered_map<Rotater *, Block *> rotater_all;
 extern map<int, Mineral *> mineral_all;
+
 extern int mineral_cnt;
 
 extern int money;
@@ -17,76 +19,27 @@ extern int mineral_num[5];
 extern int mineral_value[5];
 extern Block* block[30][20];
 
-Conveyer::Conveyer(QObject *parent, Block *init_bl, int init_dir)
-    :Facility(parent, init_bl, 3, init_dir, true)
+Rotater::Rotater(QObject *parent, Block *init_bl, int init_dir)
+    :Conveyer(parent, init_bl, init_dir)
 {
-    qDebug()<<"create conveyer";
+    qDebug()<<"create rotater";
 
-    icon.load(":/res/facility3_" + QString::number(dir));
+    type = 7;
+    in_dir = out_dir = init_dir;
+
+    icon.load(":/res/facility7_" + QString::number(init_dir));
     if(icon.isNull())
-        qDebug()<<"open conveyer icon fail";
-    switch(dir)
-    {
-    case 0:
-        in_dir = 0;
-        out_dir = 0;
-        break;
-    case 1:
-        in_dir = 1;
-        out_dir = 1;
-        break;
-    case 2:
-        in_dir = 2;
-        out_dir = 2;
-        break;
-    case 3:
-        in_dir = 3;
-        out_dir = 3;
-        break;
-    case 4:
-        in_dir = 0;
-        out_dir = 3;
-        break;
-    case 5:
-        in_dir = 0;
-        out_dir = 1;
-        break;
-    case 6:
-        in_dir = 1;
-        out_dir = 0;
-        break;
-    case 7:
-        in_dir = 1;
-        out_dir = 2;
-        break;
-    case 8:
-        in_dir = 2;
-        out_dir = 3;
-        break;
-    case 9:
-        in_dir = 2;
-        out_dir = 1;
-        break;
-    case 10:
-        in_dir = 3;
-        out_dir = 0;
-        break;
-    case 11:
-        in_dir = 3;
-        out_dir = 2;
-        break;
-    default:
-        break;
-    }
-    connect(this, &Conveyer::Mineral_trigger, this, &Conveyer::Mineral_tackle);
+        qDebug()<<"open rotater icon fail";
+    connect(this, &Rotater::Mineral_trigger, this, &Rotater::Mineral_tackle);
 }
 
-Conveyer::~Conveyer()
+Rotater::~Rotater()
 {
-    qDebug()<<"delete conveyer";
+    qDebug()<<"delete rotater";
 }
 
-void Conveyer::settle()
+
+void Rotater::settle()
 {
     if(!bl)
     {
@@ -97,18 +50,21 @@ void Conveyer::settle()
 
     bl->clear();
     bl->facility = this;
-    conveyer_all.insert(make_pair(this,bl));
+    rotater_all.insert(make_pair(this,bl));
 }
 
-bool Conveyer::Mineral_tackle(Mineral *tmp)
+bool Rotater::Mineral_tackle(Mineral *tmp)
 {
     assert(tmp != NULL);
     mineral_inque = NULL;
+    assert(tmp->type == 2);
+    tmp->type = 4;
+    tmp->icon.load(":/res/mineral4");
     mineral_outque = tmp;
     return false;
 }
 
-void Conveyer::Mineral_move()
+void Rotater::Mineral_move()
 {
     int tdir=0;
     if(!mineral_inque && !mineral_outque) return ;
@@ -169,18 +125,18 @@ void Conveyer::Mineral_move()
     return ;
 }
 
-void Conveyer::Mineral_in(Mineral *tmp)
+void Rotater::Mineral_in(Mineral *tmp)
 {
     //assert(mineral_outque == NULL);
     mineral_inque = tmp;
     return ;
 }
 
-void Conveyer::resetdir()
+void Rotater::resetdir()
 {
-    icon.load(":/res/facility3_" + QString::number(dir));
+    icon.load(":/res/facility7_" + QString::number(dir));
     if(icon.isNull())
-        qDebug()<<"open conveyer icon fail";
+        qDebug()<<"open rotater icon fail";
     switch(dir)
     {
     case 0:
@@ -198,38 +154,6 @@ void Conveyer::resetdir()
     case 3:
         in_dir = 3;
         out_dir = 3;
-        break;
-    case 4:
-        in_dir = 0;
-        out_dir = 3;
-        break;
-    case 5:
-        in_dir = 0;
-        out_dir = 1;
-        break;
-    case 6:
-        in_dir = 1;
-        out_dir = 0;
-        break;
-    case 7:
-        in_dir = 1;
-        out_dir = 2;
-        break;
-    case 8:
-        in_dir = 2;
-        out_dir = 3;
-        break;
-    case 9:
-        in_dir = 2;
-        out_dir = 1;
-        break;
-    case 10:
-        in_dir = 3;
-        out_dir = 0;
-        break;
-    case 11:
-        in_dir = 3;
-        out_dir = 2;
         break;
     default:
         break;

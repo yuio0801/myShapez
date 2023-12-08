@@ -13,8 +13,8 @@ extern map<int, Mineral *> mineral_all;
 extern int mineral_cnt;
 
 extern int money;
-extern int mineral_num[4];
-extern int mineral_value[4];
+extern int mineral_num[5];
+extern int mineral_value[5];
 extern Block* block[30][20];
 
 Harvestor::Harvestor(QObject *parent, Block *init_bl, int init_dir)
@@ -34,7 +34,6 @@ Harvestor::Harvestor(QObject *parent, Block *init_bl, int init_dir)
 
 Harvestor::~Harvestor()
 {
-        bl->facility = NULL;
     qDebug()<<"delete harvestor";
 }
 
@@ -103,13 +102,13 @@ void Harvestor::resetdir()
 }
 bool Harvestor::Mineral_out(Mineral *tmp)
 {
-    int dir = out_dir;
+    int tdir = out_dir;
     if(tmp->p.pos_x == 0 || tmp->p.pos_x == Maxx * SIZE || tmp->p.pos_y == 0 || tmp->p.pos_y == Maxy * SIZE)
     {
         return 0;
     }
     Block* nxt;Facility *nfac; bool flag = false;
-    if(dir == 0 && tmp->p.pos_x == bl->middle.pos_x && tmp->p.pos_y == bl->middle.pos_y - SIZE / 2)
+    if(tdir == 0 && tmp->p.pos_x == bl->middle.pos_x && tmp->p.pos_y == bl->middle.pos_y - SIZE / 2)
     {
         nxt = block[bl->id_x][bl->id_y - 1];
         if(!nxt->facility || nxt->facility->type != 3)
@@ -131,7 +130,7 @@ bool Harvestor::Mineral_out(Mineral *tmp)
         }
         //if(/*TODO:CUTTER*/)
         }
-    else if(dir == 1 && tmp->p.pos_x == bl->middle.pos_x + SIZE / 2 && tmp->p.pos_y == bl->middle.pos_y)
+    else if(tdir == 1 && tmp->p.pos_x == bl->middle.pos_x + SIZE / 2 && tmp->p.pos_y == bl->middle.pos_y)
     {
         nxt = block[bl->id_x + 1][bl->id_y];
         if(!nxt->facility || nxt->facility->type != 3)
@@ -153,7 +152,7 @@ bool Harvestor::Mineral_out(Mineral *tmp)
             }
         }
     }
-    else if(dir == 2 && tmp->p.pos_x == bl->middle.pos_x && tmp->p.pos_y == bl->middle.pos_y + SIZE / 2)
+    else if(tdir == 2 && tmp->p.pos_x == bl->middle.pos_x && tmp->p.pos_y == bl->middle.pos_y + SIZE / 2)
     {
         nxt = block[bl->id_x][bl->id_y + 1];
         if(!nxt->facility || nxt->facility->type != 3)
@@ -174,7 +173,7 @@ bool Harvestor::Mineral_out(Mineral *tmp)
             }
         }
     }
-    else if(dir == 3 && tmp->p.pos_x == bl->middle.pos_x - SIZE / 2 && tmp->p.pos_y == bl->middle.pos_y)
+    else if(tdir == 3 && tmp->p.pos_x == bl->middle.pos_x - SIZE / 2 && tmp->p.pos_y == bl->middle.pos_y)
     {
         nxt = block[bl->id_x - 1][bl->id_y];
         if(!nxt->facility || nxt->facility->type != 3)

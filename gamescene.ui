@@ -122,7 +122,7 @@
       <normaloff>:/res/facility4_0_0.png</normaloff>:/res/facility4_0_0.png</iconset>
     </property>
    </widget>
-   <widget class="QLabel" name="label_4">
+   <widget class="QLabel" name="label3">
     <property name="geometry">
      <rect>
       <x>-5</x>
@@ -135,10 +135,10 @@
      <string/>
     </property>
     <property name="pixmap">
-     <pixmap resource="res.qrc">:/res/mineral2.png</pixmap>
+     <pixmap resource="res.qrc">:/res/mineral3.png</pixmap>
     </property>
    </widget>
-   <widget class="QLabel" name="label_2">
+   <widget class="QLabel" name="label1">
     <property name="geometry">
      <rect>
       <x>-5</x>
@@ -189,7 +189,7 @@
      <string>Mineral0</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_3">
+   <widget class="QLabel" name="label2">
     <property name="geometry">
      <rect>
       <x>-5</x>
@@ -202,10 +202,10 @@
      <string/>
     </property>
     <property name="pixmap">
-     <pixmap resource="res.qrc">:/res/mineral3.png</pixmap>
+     <pixmap resource="res.qrc">:/res/mineral2.png</pixmap>
     </property>
    </widget>
-   <widget class="QLabel" name="label">
+   <widget class="QLabel" name="label0">
     <property name="geometry">
      <rect>
       <x>-5</x>
@@ -388,6 +388,55 @@
     <property name="icon">
      <iconset resource="res.qrc">
       <normaloff>:/res/hoe.png</normaloff>:/res/hoe.png</iconset>
+    </property>
+   </widget>
+   <widget class="QLabel" name="labmineral4">
+    <property name="geometry">
+     <rect>
+      <x>70</x>
+      <y>600</y>
+      <width>100</width>
+      <height>50</height>
+     </rect>
+    </property>
+    <property name="mouseTracking">
+     <bool>false</bool>
+    </property>
+    <property name="text">
+     <string>Mineral4</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label4">
+    <property name="geometry">
+     <rect>
+      <x>-5</x>
+      <y>600</y>
+      <width>50</width>
+      <height>50</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="pixmap">
+     <pixmap resource="res.qrc">:/res/mineral4.png</pixmap>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="Rotsettletn">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>250</y>
+      <width>50</width>
+      <height>50</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset resource="res.qrc">
+      <normaloff>:/res/facility7_0.png</normaloff>:/res/facility7_0.png</iconset>
     </property>
    </widget>
   </widget>

@@ -13,8 +13,8 @@ extern map<int, Mineral *> mineral_all;
 extern int mineral_cnt;
 extern int cutter_speed;
 extern int money;
-extern int mineral_num[4];
-extern int mineral_value[4];
+extern int mineral_num[5];
+extern int mineral_value[5];
 extern Block* block[30][20];
 extern int curdir;
 Cutter::Cutter(QObject *parent, Block *init_bl, int init_part, int init_dir, Cutter *init_another)
@@ -57,7 +57,6 @@ Cutter::Cutter(QObject *parent, Block *init_bl, int init_part, int init_dir, Cut
 
 Cutter::~Cutter()
 {
-    bl->facility = NULL;
     qDebug()<<"delete cutter";
 }
 
@@ -111,9 +110,17 @@ void Cutter::cut_mineral()
     }
     mineral_cnt++;
     mineral_all.insert(make_pair(mineral_cnt, tmp));
-    assert(bl1->facility);
-    bl1->facility->Mineral_in(tmp);
 
+
+    //assert(bl1->facility);
+    if(Mineral_out(tmp))
+    {
+        bl1->facility->Mineral_in(tmp);
+    }
+    else
+    {
+        mineral_outque = tmp;
+    }
     tmp = new Mineral(NULL, bl2, bl2->middle.pos_x, bl2->middle.pos_y, 3);
     switch(dir)
     {
@@ -125,13 +132,20 @@ void Cutter::cut_mineral()
     }
     mineral_cnt++;
     mineral_all.insert(make_pair(mineral_cnt, tmp));
-    assert(bl2->facility);
-    bl2->facility->Mineral_in(tmp);
+    if(another->Mineral_out(tmp))
+    {
+        bl2->facility->Mineral_in(tmp);
+    }
+    else
+    {
+        another->mineral_outque = tmp;
+    }
 
 }
 
 bool Cutter::settle_available()
 {
+    //assert(part == 0);
     bool flag = true;
     if(!bl)
     {
@@ -139,10 +153,15 @@ bool Cutter::settle_available()
         flag = false;
         return flag;
     }
-    if(bl->mine || bl->facility)
+    if(bl->mine)
     {
         flag = false;
     }
+    if(bl->facility&&bl->facility->type == 2)
+    {
+        flag = false;
+    }
+
     if(part == 0)
     {
         if(!another->bl)
@@ -155,7 +174,7 @@ bool Cutter::settle_available()
         {
             flag = false;
         }
-        if(another->bl->mine || another->bl->facility)
+        if(another->bl->facility&&another->bl->facility->type == 2)
         {
             flag = false;
         }
@@ -170,6 +189,7 @@ bool Cutter::Cutter_out()
     tmp = new Mineral(NULL, bl, bl->middle.pos_x, bl->middle.pos_y, 2);
     else
     tmp = new Mineral(NULL, bl, bl->middle.pos_x, bl->middle.pos_y, 3);
+
     switch(dir)
     {
     case 0:tmp->p.pos_y -= SIZE / 2; break;
@@ -199,15 +219,58 @@ bool Cutter::Cutter_out()
         return flag;
     }
 }
+void Cutter::ifout()
+{
+    Block *bl1 = bl, *bl2 = NULL;
+    switch(dir)
+    {
+    case 0:bl1 = block[bl->id_x][bl->id_y - 1];bl2 = block[bl->id_x + 1][bl->id_y - 1]; break;
+    case 1:bl1 = block[bl->id_x + 1][bl->id_y];bl2 = block[bl->id_x + 1][bl->id_y + 1];break;
+    case 2:bl1 = block[bl->id_x][bl->id_y + 1];bl2 = block[bl->id_x - 1][bl->id_y + 1];break;
+    case 3:bl1 = block[bl->id_x - 1][bl->id_y];bl2 = block[bl->id_x - 1][bl->id_y - 1];break;
+    default:assert(0);
+    }
+    if(mineral_outque)
+    {
+        Mineral *tmp = mineral_outque;
+        if(Mineral_out(tmp))
+        {
+            bl1->facility->Mineral_in(tmp);
+            mineral_outque = NULL;
+        }
+    }
+    if(another->mineral_outque)
+    {
+        Mineral *tmp = another->mineral_outque;
+        if(another->Mineral_out(tmp))
+        {
+            bl2->facility->Mineral_in(tmp);
+            another->mineral_outque = NULL;
+        }
+    }
+}
+
+
+void Cutter::settle()
+{
+    if(!bl)
+    {
+        qDebug()<<Facility_name[type] +" bl error";
+        return ;
+    }
+    assert(settle_available());
+    bl->clear();
+    bl->facility = this;
+    if(part == 0)
+        cutter_all.insert(make_pair(this, bl));
+}
 
 void Cutter::Cutter_settle()
 {
     assert(part == 0);
 
-
-
-    this->Facility::settle();
-    another->Facility::settle();
+    this->settle();
+    another->settle();
     return ;
 }
 

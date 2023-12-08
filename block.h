@@ -13,6 +13,7 @@ using namespace std;
 
 extern const int SIZE;
 
+class Rotater;
 class Cutter;
 class Dustbin;
 class Mineral;
@@ -57,7 +58,7 @@ public:
     int in_dir, out_dir;
     bool rotatable;
     virtual bool settle_available();
-    virtual void settle();
+    virtual void settle()=0;
     int type;
     Mineral *mineral_inque;
     Mineral *mineral_outque;
@@ -84,6 +85,7 @@ public:
     Pos p;
     Block *bl;
     int type;
+    int dir;
     bool moveable(int x = 0, int y = 0, int dir = 0);
 signals:
 

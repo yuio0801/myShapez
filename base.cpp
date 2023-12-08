@@ -14,8 +14,8 @@ extern map<int, Mineral *> mineral_all;
 extern int mineral_cnt;
 
 extern int money;
-extern int mineral_num[4];
-extern int mineral_value[4];
+extern int mineral_num[5];
+extern int mineral_value[5];
 extern Block* block[30][20];
 Base::Base(QObject *parent, Block *init_bl)
     :Facility(parent, init_bl, 2, 0, false)
@@ -33,7 +33,6 @@ Base::Base(QObject *parent, Block *init_bl)
 
 Base::~Base()
 {
-        bl->facility = NULL;
     qDebug()<<"delete base";
 }
 
@@ -73,6 +72,7 @@ bool Base::Mineral_tackle(Mineral *tmp)
     }
     mineral_all.erase(idx);
     delete tmp;
+    return false;
 }
 bool Base::Mineral_out(Mineral *tmp)
 {

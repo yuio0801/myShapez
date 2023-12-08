@@ -14,8 +14,10 @@ public:
     //static int speed;
     void Mineral_in(Mineral *tmp);
     bool Mineral_tackle(Mineral *tmp);
-    void Mineral_move();
-    void resetdir();
+    virtual void Mineral_move();
+    virtual void resetdir();
     void settle();
+signals:
+    void Mineral_trigger(Mineral *tmp);
 };
 #endif // CONVEYER_H

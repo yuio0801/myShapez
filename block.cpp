@@ -12,12 +12,13 @@ extern unordered_map<Base *, Block *> base_all;
 extern unordered_map<Conveyer *, Block *> conveyer_all;
 extern unordered_map<Cutter *,Block *>cutter_all;
 extern unordered_map<Dustbin *, Block *> dustbin_all;
+extern unordered_map<Rotater *, Block *> rotater_all;
 extern map<int, Mineral *> mineral_all;
 extern int mineral_cnt;
 
 extern int money;
-extern int mineral_num[4];
-extern int mineral_value[4];
+extern int mineral_num[5];
+extern int mineral_value[5];
 extern Block* block[30][20];
 Block::Block(QObject *parent, int init_id_x, int init_id_y)
     : QObject{parent}
@@ -45,10 +46,12 @@ Block::~Block()
     if(facility)
     {
         delete facility;
+        facility = NULL;
     }
     if(mine)
     {
         delete mine;
+        mine = NULL;
     }
 
 }
@@ -95,8 +98,10 @@ void Block::clear()
                     cutter = cutter->another;
                 }
                 cutter_all.erase(cutter);
+                cutter->another->bl->facility = NULL;
                 delete cutter->another;
                 delete cutter;
+                cutter->bl->facility = NULL;
             }
             else
             {
@@ -106,10 +111,13 @@ void Block::clear()
                 case 2:base_all.erase((Base*)facility);break;
                 case 3:conveyer_all.erase((Conveyer*)facility);break;
                 case 5:dustbin_all.erase((Dustbin*)facility);break;
+                case 7:rotater_all.erase((Rotater*)facility);break;
                 }
 
                 delete facility;
+                facility = NULL;
             }
+
         }
 
 }
@@ -152,13 +160,13 @@ bool Facility::settle_available()
     if(bl->mine) return false;
     if(bl->facility)
     {
-        if(bl->facility->type == 1 || bl->facility->type == 2) return false;
+        if(bl->facility->type == 2) return false;
         else return true;
     }
     return true;
 }
 
-void Facility::settle()
+/*void Facility::settle()
 {
     if(!bl)
     {
@@ -219,6 +227,7 @@ void Facility::settle()
             case 2:base_all.erase((Base*)bl->facility);break;
             case 3:conveyer_all.erase((Conveyer*)bl->facility);break;
             case 5:dustbin_all.erase((Dustbin*)bl->facility);break;
+            case 7:rotater_all.erase((Rotater*)bl->facility);break;
             }
 
             delete bl->facility;
@@ -234,12 +243,13 @@ void Facility::settle()
     else
     switch(bl->facility->type)
     {
-    case 1:harvestor_all.insert(make_pair((Harvestor*)bl->facility, bl));
-    case 2:base_all.insert(make_pair((Base*)bl->facility, bl));
-    case 3:conveyer_all.insert(make_pair((Conveyer*)bl->facility,bl));
-    case 5:dustbin_all.insert(make_pair((Dustbin*)bl->facility, bl));
+    case 1:harvestor_all.insert(make_pair((Harvestor*)bl->facility, bl));break;
+    case 2:base_all.insert(make_pair((Base*)bl->facility, bl));break;
+    case 3:conveyer_all.insert(make_pair((Conveyer*)bl->facility,bl));break;
+    case 5:dustbin_all.insert(make_pair((Dustbin*)bl->facility, bl));break;
+    case 7:rotater_all.insert(make_pair((Rotater*)bl->facility, bl));break;
     }
-}
+}*/
 void Facility::resetdir()
 {
     return ;
@@ -266,7 +276,18 @@ bool Facility::Mineral_out(Mineral *tmp)
             if(nfac->type == 4)
             {
                 Cutter * cutter = (Cutter*)nfac;
-                if(tmp->type != 0 || cutter->part != 0 || cutter->in_dir != 0 || !cutter->empty || !cutter->Cutter_out())
+                if(tmp->type != 0 || cutter->part != 0 || cutter->in_dir != 0 || !cutter->empty || !cutter->Cutter_out() || cutter->mineral_outque || cutter->another->mineral_outque)
+                {
+                    flag = false;
+                }
+                else
+                {
+                    flag = true;
+                }
+            }
+            else if(nfac->type == 7)
+            {
+                if(tmp->type != 2 || nfac->in_dir != 0)
                 {
                     flag = false;
                 }
@@ -295,7 +316,18 @@ bool Facility::Mineral_out(Mineral *tmp)
             if(nfac->type == 4)
             {
                 Cutter * cutter = (Cutter*)nfac;
-                if(tmp->type != 0 || cutter->part != 0 || cutter->in_dir != 1 || !cutter->empty || !cutter->Cutter_out())
+                if(tmp->type != 0 || cutter->part != 0 || cutter->in_dir != 1 || !cutter->empty || !cutter->Cutter_out() || cutter->mineral_outque || cutter->another->mineral_outque)
+                {
+                    flag = false;
+                }
+                else
+                {
+                    flag = true;
+                }
+            }
+            else if(nfac->type == 7)
+            {
+                if(tmp->type != 2 || nfac->in_dir != 1)
                 {
                     flag = false;
                 }
@@ -323,7 +355,18 @@ bool Facility::Mineral_out(Mineral *tmp)
             if(nfac->type == 4)
             {
                 Cutter * cutter = (Cutter*)nfac;
-                if(tmp->type != 0 || cutter->part != 0 || cutter->in_dir != 2 || !cutter->empty || !cutter->Cutter_out())
+                if(tmp->type != 0 || cutter->part != 0 || cutter->in_dir != 2 || !cutter->empty || !cutter->Cutter_out() || cutter->mineral_outque || cutter->another->mineral_outque)
+                {
+                    flag = false;
+                }
+                else
+                {
+                    flag = true;
+                }
+            }
+            else if(nfac->type == 7)
+            {
+                if(tmp->type != 2 || nfac->in_dir != 2)
                 {
                     flag = false;
                 }
@@ -351,7 +394,18 @@ bool Facility::Mineral_out(Mineral *tmp)
             if(nfac->type == 4)
             {
                 Cutter * cutter = (Cutter*)nfac;
-                if(tmp->type != 0 || cutter->part != 0 || cutter->in_dir != 3 || !cutter->empty || !cutter->Cutter_out())
+                if(tmp->type != 0 || cutter->part != 0 || cutter->in_dir != 3 || !cutter->empty || !cutter->Cutter_out() || cutter->mineral_outque || cutter->another->mineral_outque)
+                {
+                    flag = false;
+                }
+                else
+                {
+                    flag = true;
+                }
+            }
+            else if(nfac->type == 7)
+            {
+                if(tmp->type != 2 || nfac->in_dir != 3)
                 {
                     flag = false;
                 }
@@ -379,6 +433,7 @@ Mineral::Mineral(QObject *parent, Block *init_bl, int init_pos_x , int init_pos_
     p.pos_x = init_pos_x;
     p.pos_y = init_pos_y;
     type = init_type;
+    dir = 0;
     icon.load(":/res/mineral" + QString::number(type));
     if(icon.isNull())
         qDebug()<<"open mineral icon fail";

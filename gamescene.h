@@ -10,6 +10,7 @@
 #include "conveyer.h"
 #include "dustbin.h"
 #include "cutter.h"
+#include "rotater.h"
 
 namespace Ui {
 class GameScene;

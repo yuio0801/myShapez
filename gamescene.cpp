@@ -7,6 +7,9 @@
 #include <QTimer>
 #include <iostream>
 #include <fstream>
+#include <stdio.h>
+#include <stdlib.h>
+
 using namespace  std;
 const int SIZE = 50;
 
@@ -16,7 +19,7 @@ extern int Maxx, Maxy;
 extern int num_mine[2];
 
 extern QString filePath;
-extern int mineral_value[4];
+extern int mineral_value[5];
 extern int earned;
 extern int num_base;
 
@@ -37,11 +40,11 @@ unordered_map<Base *, Block *> base_all;
 unordered_map<Conveyer *, Block *> conveyer_all;
 unordered_map<Cutter *,Block *>cutter_all;
 unordered_map<Dustbin *, Block *> dustbin_all;
-
+unordered_map<Rotater *, Block *> rotater_all;
 map<int, Mineral *> mineral_all;
 int mineral_cnt = 0;
 
-int mineral_num[4]={0,0,0,0};
+int mineral_num[5]={0,0,0,0,0};
 bool bufflag[4]={0,0,0,0};
 int harvestor_speed = 30;
 int base_speed = 10;
@@ -52,10 +55,11 @@ Conveyer *Contobesettle = NULL;
 Harvestor *Hartobesettle = NULL;
 Dustbin *Dustobesettle = NULL;
 Cutter *Cuttobesettle = NULL;
+Rotater *Rottobesettle = NULL;
 
 bool settleable = false;
 int curdir = 0;
-int isnew = 0;
+int isnew = 1;
 Block *shovelblock;
 GameScene::GameScene(QWidget *parent, bool isload) :
     QWidget(parent),
@@ -67,17 +71,16 @@ GameScene::GameScene(QWidget *parent, bool isload) :
     setFixedSize(1700,1000);
     setWindowTitle("myShapez");
 
-    if(isload)
+    if(!isnew)
     {
-        if(!Load())
-        {
-            Init();
-        }
+        Load();
+        Init();
     }
     else
     {
         Init();
     }
+    isnew=0;
     GameTime = 0;
     ui->TimeLabel->setText("GameTime:0s");
     timer0 = new QTimer;
@@ -91,14 +94,7 @@ GameScene::GameScene(QWidget *parent, bool isload) :
     });
     timer0->start(1000);
 
-    //Block *test = new Block();
-    for(int i = 0; i < Maxy; ++i)
-    {
-        for(int j = 0; j < Maxx; ++j)
-        {
-            block[i][j] = new Block(NULL, i, j);
-        }
-    }
+
 
     connect(timer1, &QTimer::timeout, this, [this]{this->create_mineral();});//Harvestor
     timer1->start(harvestor_speed);
@@ -138,6 +134,12 @@ GameScene::GameScene(QWidget *parent, bool isload) :
             settletype = 3; this->settle_mode();}
             }
         );
+    connect(ui->Rotsettletn, &QPushButton::clicked, this, [&, this]{
+        if(settletype == -1)
+        {
+            settletype = 7; this->settle_mode();}
+    }
+            );
     connect(ui->Havsettletn, &QPushButton::clicked, this, [&, this]{
             if(settletype == -1)
             {
@@ -160,81 +162,6 @@ GameScene::GameScene(QWidget *parent, bool isload) :
             settletype = 6; this->settle_mode();
         }
     });
-    Mine *tmp = new Mine(parent, block[0][0], 0);
-    tmp->settle();
-    tmp = new Mine(parent, block[0][1], 0);
-    tmp->settle();
-
-    Harvestor *hav = new Harvestor(parent, block[0][0], 1);
-    if(hav->settle_available())
-    {
-        hav->settle();
-    }
-    qDebug()<<conveyer_all.size();
-    hav = new Harvestor(parent, block[0][1], 1);
-    if(hav->settle_available())
-    {
-        hav->settle();
-    }
-    qDebug()<<conveyer_all.size();
-    Base *base = new Dustbin(parent, block[2][0]);
-    if(base->settle_available())
-    {
-        base->settle();
-    }
-    qDebug()<<conveyer_all.size();
-    base = new Base(parent, block[2][2]);
-    if(base->settle_available())
-    {
-        base->settle();
-    }
-    qDebug()<<conveyer_all.size();
-    Cutter *cut = new Cutter(parent, block[2][1], 0, 2);
-    if(cut->settle_available())
-    {
-        cut->Cutter_settle();
-    }
-qDebug()<<conveyer_all.size();
-
-
-    Conveyer *conv;
-    conv = new Conveyer(parent, block[1][0], 1);
-    if(conv->settle_available())
-    {
-        conv->settle();
-    }
-    qDebug()<<conveyer_all.size();
-    conv = new Conveyer(parent, block[2][0], 7);
-    if(conv->settle_available())
-    {
-        conv->settle();
-    }
-    else
-    {
-        delete conv;
-    }
-    qDebug()<<conveyer_all.size();
-    conv = new Conveyer(parent, block[2][4], 3);
-    if(conv->settle_available())
-    {
-        conv->settle();
-    }
-    qDebug()<<conveyer_all.size();
-    conv = new Conveyer(parent, block[1][2], 2);
-    if(conv->settle_available())
-    {
-        conv->settle();
-    }
-    qDebug()<<conveyer_all.size();
-    base = new Base(parent, block[1][5]);
-    if(base->settle_available())
-    {
-        base->settle();
-    }
-qDebug()<<conveyer_all.size();
-    //delete block[0][0];
-    //block[0][0]=NULL;
-    //qDebug()<<"delete asda";
 }
 
 GameScene::~GameScene()
@@ -243,15 +170,357 @@ GameScene::~GameScene()
 }
 bool GameScene::Load()
 {
-    return 0;
+    ifstream savedata;
+    if(filePath.isEmpty())
+    {
+        filePath = "C:\\Users\\ouyan\\Desktop\\myShapez\\savedata.txt";
+    }
+    savedata.open(filePath.toStdString());
+
+    string strFileData = "";
+    int line = 0;
+    char tmpLineData[1024] = {0};
+    while(savedata.getline(tmpLineData, sizeof(tmpLineData)))
+    {
+        if(line == 0)
+        {
+            int d;
+            sscanf(tmpLineData, "%d",&d);
+            if(d == 0)
+            {
+                isnew = true;
+            }
+            else
+            {
+                isnew = false;
+            }
+        }
+        if(line == 1)
+        {
+            sscanf(tmpLineData, "%d %d",&Maxx,&Maxy);
+        }
+        if(line == 2)
+        {
+            sscanf(tmpLineData, "%d %d %d %d %d",&mineral_value[0],&mineral_value[1],&mineral_value[2],&mineral_value[3],&mineral_value[4]);
+        }
+        if(line == 3)
+        {
+            sscanf(tmpLineData, "%d %d",&num_mine[0],&num_mine[1]);
+        }
+        if(line == 4)
+        {
+            sscanf(tmpLineData, "%d",&num_base);
+        }
+        if(line == 5)
+        {
+            sscanf(tmpLineData, "%d",&earned);
+        }
+        line++;
+        if(line == 6) break;
+    }
+
 }
+
 void GameScene::Init()
 {
     mine_all.clear();
     harvestor_all.clear();
     base_all.clear();
     conveyer_all.clear();
-
+    cutter_all.clear();
+    dustbin_all.clear();
+    rotater_all.clear();
+    mineral_all.clear();
+    //Block *test = new Block();
+    for(int i = 0; i < Maxy; ++i)
+    {
+        for(int j = 0; j < Maxx; ++j)
+        {
+            block[i][j] = new Block(NULL, i, j);
+        }
+    }
+    harvestor_speed = init_harvestor_speed;
+    base_speed = init_base_speed;
+    conveyer_speed = init_conveyer_speed;
+    cutter_speed = init_cutter_speed;
+    settletype = -1;
+    if(!ifload || isnew)
+    {
+        money = 0;
+        mineral_cnt = 0;
+        for(int i=0;i<5;++i)
+        {
+            mineral_num[i]=0;
+        }
+        for(int i=0;i<4;++i)
+        {
+            bufflag[i]=0;
+        }
+        Contobesettle = NULL;
+        Hartobesettle = NULL;
+        Dustobesettle = NULL;
+        Cuttobesettle = NULL;
+        Rottobesettle = NULL;
+        settleable = false;
+        curdir = 0;
+        shovelblock=NULL;
+        /*TODO:BASE MINE*/
+        for(int i=Maxx/2-2;i<Maxx/2+num_base - 2;++i)
+        {
+            for(int j=Maxy/2-2;j<Maxy/2+num_base - 2;++j)
+            {
+                Base *base = new Base(NULL, block[i][j]);
+                base->settle();
+            }
+        }
+        srand(time(NULL));
+        int dx[4]={1,-1,0,0};
+        int dy[4]={0,0,1,-1};
+        int c=0;
+        while(c<=num_mine[0])
+        {
+            int idx=rand()%Maxx;
+            int idy=rand()%Maxy;
+            bool flag=true;
+            for(int i=0;i<4;++i)
+            {
+                int xx=idx+dx[i];
+                int yy=idy+dy[i];
+                if(xx<0||xx>=Maxx||yy<0||yy>=Maxy)
+                {
+                    continue;
+                }
+                if(block[xx][yy]->mine)
+                {
+                    flag=false;
+                    break;
+                }
+                if(block[xx][yy]->facility&&block[xx][yy]->facility->type == 2)
+                {
+                    flag=false;
+                    break;
+                }
+            }
+            if(!flag ) continue;
+            Mine *mine = new Mine(NULL,block[idx][idy],0);
+            if(mine->settle_available())
+            {
+                mine->settle();
+                c++;
+            }
+            else
+            {
+                delete mine;
+            }
+        }
+        c=0;
+        while(c<=num_mine[1])
+        {
+            int idx=rand()%Maxx;
+            int idy=rand()%Maxy;
+            bool flag=true;
+            for(int i=0;i<4;++i)
+            {
+                int xx=idx+dx[i];
+                int yy=idy+dy[i];
+                if(xx<0||xx>=Maxx||yy<0||yy>=Maxy)
+                {
+                        continue;
+                }
+                if(block[xx][yy]->mine)
+                {
+                    flag=false;
+                    break;
+                }
+                if(block[xx][yy]->facility&&block[xx][yy]->facility->type == 2)
+                {
+                    flag=false;
+                    break;
+                }
+            }
+            if(!flag ) continue;
+            Mine *mine = new Mine(NULL,block[idx][idy],1);
+            if(mine->settle_available())
+            {
+                mine->settle();
+                c++;
+            }
+            else
+            {
+                delete mine;
+            }
+        }
+    }
+    else
+    {
+        ifstream savedata;
+        string strFileData = "";
+        int line = 1;int type=0;
+        char tmpLineData[1024] = {0};
+        if(filePath.isEmpty())
+        {
+            filePath = "C:\\Users\\ouyan\\Desktop\\myShapez\\savedata.txt";
+        }
+        savedata.open(filePath.toStdString());
+        savedata.getline(tmpLineData, sizeof(tmpLineData));
+        sscanf(tmpLineData, "%d", &isnew);
+        while(savedata.getline(tmpLineData, sizeof(tmpLineData)))
+        {
+            if(line<6)
+            {
+                line++;
+                continue;
+            }
+            if(type==0)
+            {
+                int basenum;
+                sscanf(tmpLineData, "%d", &basenum);
+                for(int i=0;i<basenum;++i)
+                {
+                    savedata.getline(tmpLineData, sizeof(tmpLineData));
+                    int idx,idy;
+                    sscanf(tmpLineData,"%d %d",&idx,&idy);
+                    Base *base = new Base(NULL, block[idx][idy]);
+                    base->settle();
+                }
+                type++;
+                continue;
+            }
+            else if(type == 1)
+            {
+                int minenum;
+                sscanf(tmpLineData, "%d", &minenum);
+                for(int i=0;i<minenum;++i)
+                {
+                    savedata.getline(tmpLineData, sizeof(tmpLineData));
+                    int idx,idy,t;
+                    sscanf(tmpLineData,"%d %d %d",&idx,&idy,&t);
+                    Mine *mine = new Mine(NULL, block[idx][idy],t);
+                    mine->settle();
+                }
+                type++;
+                continue;
+            }
+            else if(type == 2)
+            {
+                int havnum;
+                sscanf(tmpLineData, "%d", &havnum);
+                for(int i=0;i<havnum;++i)
+                {
+                    savedata.getline(tmpLineData, sizeof(tmpLineData));
+                    int idx,idy,t;
+                    sscanf(tmpLineData,"%d %d %d",&idx,&idy,&t);
+                    Harvestor *hav = new Harvestor(NULL, block[idx][idy],t);
+                    hav->settle();
+                }
+                type++;
+                continue;
+            }
+            else if(type == 3)
+            {
+                int connum;
+                sscanf(tmpLineData, "%d", &connum);
+                for(int i=0;i<connum;++i)
+                {
+                    savedata.getline(tmpLineData, sizeof(tmpLineData));
+                    int idx,idy,t;
+                    sscanf(tmpLineData,"%d %d %d",&idx,&idy,&t);
+                    Conveyer *con = new Conveyer(NULL, block[idx][idy],t);
+                    con->settle();
+                }
+                type++;
+                continue;
+            }
+            else if(type == 4)
+            {
+                int cutnum;
+                sscanf(tmpLineData, "%d", &cutnum);
+                for(int i=0;i<cutnum;++i)
+                {
+                    savedata.getline(tmpLineData, sizeof(tmpLineData));
+                    int idx,idy,t;
+                    sscanf(tmpLineData,"%d %d %d",&idx,&idy,&t);
+                    Cutter *cut = new Cutter(NULL, block[idx][idy],0,t,NULL);
+                    cut->Cutter_settle();
+                }
+                type++;
+                continue;
+            }
+            else if(type == 5)
+            {
+                int dustnum;
+                sscanf(tmpLineData, "%d", &dustnum);
+                for(int i=0;i<dustnum;++i)
+                {
+                    savedata.getline(tmpLineData, sizeof(tmpLineData));
+                    int idx,idy;
+                    sscanf(tmpLineData,"%d %d",&idx,&idy);
+                    Dustbin *dust = new Dustbin(NULL, block[idx][idy]);
+                    dust->settle();
+                }
+                type++;
+                continue;
+            }
+            else if(type == 6)
+            {
+                int rotnum;
+                sscanf(tmpLineData, "%d", &rotnum);
+                for(int i=0;i<rotnum;++i)
+                {
+                    savedata.getline(tmpLineData, sizeof(tmpLineData));
+                    int idx,idy,t;
+                    sscanf(tmpLineData,"%d %d %d",&idx,&idy,&t);
+                    Rotater *rot = new Rotater(NULL, block[idx][idy],t);
+                    rot->settle();
+                }
+                type++;
+                continue;
+            }
+            else if(type == 7)
+            {
+                sscanf(tmpLineData,"%d %d %d %d %d",&mineral_num[0],&mineral_num[1],&mineral_num[2],&mineral_num[3],&mineral_num[4]);
+                type++;
+                continue;
+            }
+            else if(type == 8)
+            {
+                int d[4];
+                sscanf(tmpLineData,"%d %d %d %d",&d[0],&d[1],&d[2],&d[3]);
+                for(int i=0;i<4;++i)
+                {
+                    if(d[i]) bufflag[i]=1;
+                    else bufflag[i]=0;
+                }
+                type++;
+                continue;
+            }
+            else if(type == 9)
+            {
+                sscanf(tmpLineData,"%d",&harvestor_speed);
+                type++;
+                continue;
+            }
+            else if(type == 10)
+            {
+                sscanf(tmpLineData,"%d",&conveyer_speed);
+                type++;
+                continue;
+            }
+            else if(type == 11)
+            {
+                sscanf(tmpLineData,"%d",&cutter_speed);
+                type++;
+                continue;
+            }
+            else if(type == 12)
+            {
+                sscanf(tmpLineData,"%d",&money);
+                type++;
+                continue;
+            }
+            line++;
+        }
+    }
 }
 void GameScene::Save(int flag)
 {
@@ -264,17 +533,19 @@ void GameScene::Save(int flag)
 
 
     //game_info
-    savedata<<flag<<endl;
     if(!flag)
     {
+        savedata<<"0"<<endl;
     savedata<<Maxx<<" "<<Maxy<<endl;
-    for(int i=0;i<4;++i)
+    for(int i=0;i<5;++i)
     {
-        savedata<<mineral_num[i]<<" ";
+        savedata<<mineral_value[i]<<" ";
     }
     savedata<<endl;
     savedata<<num_mine[0]<<" "<<num_mine[1]<<endl;
     savedata<<num_base<<endl;
+    savedata<<earned<<endl;
+
     savedata<<base_all.size()<<endl;
     for(auto pai:base_all)
     {
@@ -284,8 +555,9 @@ void GameScene::Save(int flag)
     savedata<<mine_all.size()<<endl;
     for(auto pai:mine_all)
     {
+        Mine *mine=pai.first;
         Block *bl = pai.second;
-        savedata<<bl->id_x<<" "<<bl->id_y<<endl;
+        savedata<<bl->id_x<<" "<<bl->id_y<<" "<<mine->id_mineral<<endl;
     }
     savedata<<harvestor_all.size()<<endl;
     for(auto pai:harvestor_all)
@@ -301,18 +573,27 @@ void GameScene::Save(int flag)
         Block *bl = pai.second;
         savedata<<bl->id_x<<" "<<bl->id_y<<" "<<con->dir<<endl;
     }
+    savedata<<cutter_all.size()<<endl;
     for(auto pai:cutter_all)
     {
         Cutter *cut = pai.first;
         Block *bl = pai.second;
         savedata<<bl->id_x<<" "<<bl->id_y<<" "<<cut->dir<<endl;
     }
+    savedata<<dustbin_all.size()<<endl;
     for(auto pai:dustbin_all)
     {
         Block *bl = pai.second;
         savedata<<bl->id_x<<" "<<bl->id_y<<endl;
     }
-    for(int i=0;i<4;++i)
+    savedata<<rotater_all.size()<<endl;
+    for(auto pai:rotater_all)
+    {
+        Rotater *rot = pai.first;
+        Block *bl = pai.second;
+        savedata<<bl->id_x<<" "<<bl->id_y<<" "<<rot->dir<<endl;
+    }
+    for(int i=0;i<5;++i)
     {
         savedata<<mineral_num[i]<<" ";
     }
@@ -321,7 +602,7 @@ void GameScene::Save(int flag)
     {
         if(bufflag[i])
         savedata<<"1 ";
-        else savedata<<"2 ";
+        else savedata<<"0 ";
     }
     savedata<<endl;
     savedata<<harvestor_speed<<endl;
@@ -331,10 +612,11 @@ void GameScene::Save(int flag)
     }
     else
     {
+    savedata<<"1"<<endl;
     savedata<<Maxx<<" "<<Maxy<<endl;
-    for(int i=0;i<4;++i)
+    for(int i=0;i<5;++i)
     {
-        savedata<<mineral_num[i]<<" ";
+        savedata<<mineral_value[i]<<" ";
     }
     savedata<<endl;
     savedata<<num_mine[0]<<" "<<num_mine[1]<<endl;
@@ -346,7 +628,7 @@ void GameScene::Save(int flag)
 }
 void GameScene::Exit(int flag)
 {
-    Save(flag);
+    Save(isnew&&flag);
     emit close();
     this->show();
     delete this;
@@ -354,10 +636,11 @@ void GameScene::Exit(int flag)
 }
 void GameScene::buff_check()
 {
-    ui->labmineral0->setText(QString::number(mineral_num[0]));
-    ui->labmineral1->setText(QString::number(mineral_num[1]));
-    ui->labmineral2->setText(QString::number(mineral_num[2]));
-    ui->labmineral3->setText(QString::number(mineral_num[3]));
+    ui->labmineral0->setText(QString::number(mineral_num[0]) + "/20");
+    ui->labmineral1->setText(QString::number(mineral_num[1]) + "/30");
+    ui->labmineral2->setText(QString::number(mineral_num[2]) + "/50");
+    ui->labmineral3->setText(QString::number(mineral_num[3]) + "/50");
+    ui->labmineral4->setText(QString::number(mineral_num[4]) + "/30");
     if(mineral_num[0] >= 20 && !bufflag[0])
     {
         ui->buff0->show();
@@ -379,7 +662,7 @@ void GameScene::buff_check()
         ui->buff2text->setText("切割器加速");
         bufflag[2] = 1;
     }
-    if(mineral_num[0] >= 50 && mineral_num[1] >= 50 && mineral_num[2] >= 50)
+    if(mineral_num[0] >= 20 && mineral_num[1] >= 30 && mineral_num[2] >= 50 && mineral_num[3] >= 50 && mineral_num[4] >= 50)
     {
         timer0->stop();
         timer1->stop();
@@ -387,6 +670,7 @@ void GameScene::buff_check()
         timer3->stop();
         timer4->stop();
         ui->exittext->setText("Congratulations!");
+        isnew = 1;
     }
 }
 
@@ -451,18 +735,20 @@ void GameScene::move_mineral()
         assert(bl);
         con->Mineral_move();
     }
-    /*
-    for(auto pai:mineral_all)
+    for(auto pai:rotater_all)
     {
-        int idx = pai.first;
-        Mineral* tmp = pai.second;
-        Block* bl = tmp->bl;
-        Facility* fac = tmp->bl->facility;
-        if(fac->type)
-        {
-
-        }
-    }*/
+        Rotater *rot = pai.first;
+        Block *bl = pai.second;
+        assert(bl);
+        rot->Mineral_move();
+    }
+    for(auto pai:cutter_all)
+    {
+        Cutter *cut = pai.first;
+        Block *bl = pai.second;
+        assert(bl);
+        cut->ifout();
+    }
 }
 void GameScene::settle_mode()
 {
@@ -470,6 +756,11 @@ void GameScene::settle_mode()
     {
         Contobesettle = new Conveyer(NULL, block[0][0], 0);
         settleable = Contobesettle->settle_available();
+    }
+    if(settletype == 7)
+    {
+        Rottobesettle = new Rotater(NULL, block[0][0], 0);
+        settleable = Rottobesettle->settle_available();
     }
     if(settletype == 1)
     {
@@ -490,6 +781,7 @@ void GameScene::settle_mode()
     {
         shovelblock = block[0][0];
     }
+
 }
 void GameScene::paintEvent(QPaintEvent* event)
 {
@@ -524,6 +816,12 @@ void GameScene::paintEvent(QPaintEvent* event)
             pos = Contobesettle->bl;
             painter.drawPixmap(pos->p.pos_x, pos->p.pos_y, icon);
             painter.drawPixmap(1600, 900, Contobesettle->icon);
+        }
+        if(settletype == 7)
+        {
+            pos = Rottobesettle->bl;
+            painter.drawPixmap(pos->p.pos_x, pos->p.pos_y, icon);
+            painter.drawPixmap(1600, 900, Rottobesettle->icon);
         }
         if(settletype == 1)
         {
@@ -582,6 +880,14 @@ void GameScene::keyPressEvent(QKeyEvent *event)
                         settleable = Contobesettle->settle_available();
                     }
                 }
+                if(settletype == 7)
+                {
+                    if(Rottobesettle->bl->id_y != 0)
+                    {
+                        Rottobesettle->bl = block[Rottobesettle->bl->id_x][Rottobesettle->bl->id_y - 1];
+                        settleable = Rottobesettle->settle_available();
+                    }
+                }
                 if(settletype == 1)
                 {
                     if(Hartobesettle->bl->id_y != 0)
@@ -623,6 +929,14 @@ void GameScene::keyPressEvent(QKeyEvent *event)
                     {
                         Contobesettle->bl = block[Contobesettle->bl->id_x][Contobesettle->bl->id_y + 1];
                         settleable = Contobesettle->settle_available();
+                    }
+                }
+                if(settletype == 7)
+                {
+                    if(Rottobesettle->bl->id_y != Maxy - 1)
+                    {
+                        Rottobesettle->bl = block[Rottobesettle->bl->id_x][Rottobesettle->bl->id_y + 1];
+                        settleable = Rottobesettle->settle_available();
                     }
                 }
                 if(settletype == 1)
@@ -668,6 +982,14 @@ void GameScene::keyPressEvent(QKeyEvent *event)
                         settleable = Contobesettle->settle_available();
                     }
                 }
+                if(settletype == 7)
+                {
+                    if(Rottobesettle->bl->id_x != 0)
+                    {
+                        Rottobesettle->bl = block[Rottobesettle->bl->id_x - 1][Rottobesettle->bl->id_y];
+                        settleable = Rottobesettle->settle_available();
+                    }
+                }
                 if(settletype == 1)
                 {
                     if(Hartobesettle->bl->id_x != 0)
@@ -711,6 +1033,14 @@ void GameScene::keyPressEvent(QKeyEvent *event)
                         settleable = Contobesettle->settle_available();
                     }
                 }
+                if(settletype == 7)
+                {
+                    if(Rottobesettle->bl->id_x != Maxx - 1)
+                    {
+                        Rottobesettle->bl = block[Rottobesettle->bl->id_x + 1][Rottobesettle->bl->id_y];
+                        settleable = Rottobesettle->settle_available();
+                    }
+                }
                 if(settletype == 1)
                 {
                     if(Hartobesettle->bl->id_x != Maxx - 1)
@@ -752,6 +1082,16 @@ void GameScene::keyPressEvent(QKeyEvent *event)
                     if(Contobesettle->settle_available())
                     {
                         Contobesettle->settle();
+                        settletype = -1;
+                        curdir = 0;
+                    }
+
+                }
+                if(settletype == 7)
+                {
+                    if(Rottobesettle->settle_available())
+                    {
+                        Rottobesettle->settle();
                         settletype = -1;
                         curdir = 0;
                     }
@@ -802,6 +1142,12 @@ void GameScene::keyPressEvent(QKeyEvent *event)
                     curdir = Contobesettle->dir;
                     Contobesettle->resetdir();
                 }
+                if(settletype == 7)
+                {
+                    Rottobesettle->dir = (Rottobesettle->dir + 1) % 12;
+                    curdir = Rottobesettle->dir;
+                    Rottobesettle->resetdir();
+                }
                 if(settletype == 1)
                 {
                     Hartobesettle->dir = (Hartobesettle->dir + 1) % 4;
@@ -814,9 +1160,18 @@ void GameScene::keyPressEvent(QKeyEvent *event)
                 }
                 break;
             case Qt::Key_X:
+                if(settletype == -1)
+                {
+                    break;
+                }
                     if(settletype == 3)
                     {
                         delete Contobesettle;
+                        settletype = -1;
+                    }
+                    if(settletype == 7)
+                    {
+                        delete Rottobesettle;
                         settletype = -1;
                     }
                     if(settletype == 1)
